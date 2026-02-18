@@ -1,13 +1,24 @@
 'use client'
 
-import {useTopics} from "@/features/topics/useTopics";
-import {useMemo, useState} from "react";
-import {buildTopicTree} from "@/features/topics/topic.tree.utils";
-import {TopicNodeItem} from "@/features/topics/TopicNodeItem";
+import { useState, useMemo } from 'react'
+import { buildTopicTree } from './topic.tree.utils'
+import { TopicNodeItem } from './TopicNodeItem'
+import { useTopics } from './useTopics'
 
+/**
+ * TopicTree is the stateful root of the topics UI.
+ * It owns:
+ * - expansion state
+ * - selection state
+ */
 export function TopicTree() {
-    const {topics, loading, error} = useTopics()
+    const { topics, loading, error } = useTopics()
+
+    // Which nodes are expanded
     const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
+
+    // Which topic is selected
+    const [selectedPath, setSelectedPath] = useState<string | null>(null)
 
     const tree = useMemo(() => buildTopicTree(topics), [topics])
 
@@ -19,13 +30,12 @@ export function TopicTree() {
         })
     }
 
-    if (loading) {
-        return <div className="p-2 text-sm text-black">Loading topics...</div>
+    function select(path: string) {
+        setSelectedPath(path)
     }
 
-    if (error) {
-        return <div className="p-2 text-sm text-red-600">{error}</div>
-    }
+    if (loading) return <div className="p-2 text-sm">Loading topics…</div>
+    if (error) return <div className="p-2 text-sm text-red-600">{error}</div>
 
     return (
         <div className="overflow-auto max-h-full">
@@ -35,7 +45,9 @@ export function TopicTree() {
                     node={node}
                     level={0}
                     expandedPaths={expandedPaths}
+                    selectedPath={selectedPath}
                     onToggle={toggle}
+                    onSelect={select}
                 />
             ))}
         </div>
