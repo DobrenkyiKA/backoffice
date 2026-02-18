@@ -1,5 +1,3 @@
-'use client'
-
 import {TopicNode} from "@/features/topics/topic.types";
 
 type Props = {
@@ -22,7 +20,7 @@ export function TopicNodeItem({
     return (
         <div>
             <div
-                className="flex items-center gap-1 py-1 hover:bg-gray-100 cursor-pointer"
+                className="flex items-center gap-1 py-1 hover:bg-blue-500 cursor-pointer"
                 style={{paddingLeft: level * 16}}
             >
                 {hasChildren ? (
