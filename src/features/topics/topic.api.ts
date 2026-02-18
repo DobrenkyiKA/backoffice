@@ -1,6 +1,6 @@
 import {Topic} from "@/features/topics/topic.types";
 
-const QUESTION_API = process.env.NEXT_PUBLIC_QUESTION_API
+const QUESTION_API = process.env.NEXT_PUBLIC_QUESTION_API_URL
 
 export async function fetchTopics(
     accessToken: string
