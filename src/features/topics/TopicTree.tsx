@@ -1,17 +1,19 @@
-'use client'
-
 import { useState, useMemo } from 'react'
 import { buildTopicTree } from './topic.tree.utils'
 import { TopicNodeItem } from './TopicNodeItem'
 import { useTopics } from './useTopics'
 
+type Props = {
+    onSelectTopic: (path: string) => void
+}
+
 /**
  * TopicTree is the stateful root of the topics UI.
  * It owns:
  * - expansion state
- * - selection state
+ * - selection state (reports selected topic upward.)
  */
-export function TopicTree() {
+export function TopicTree({onSelectTopic}: Props) {
     const { topics, loading, error } = useTopics()
 
     // Which nodes are expanded
@@ -32,6 +34,7 @@ export function TopicTree() {
 
     function select(path: string) {
         setSelectedPath(path)
+        onSelectTopic(path) //report upward
     }
 
     if (loading) return <div className="p-2 text-sm">Loading topics…</div>
