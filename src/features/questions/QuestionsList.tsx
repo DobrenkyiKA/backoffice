@@ -1,17 +1,24 @@
 'use client'
 
+import {useState} from 'react'
 import {useQuestions} from './useQuestions'
+import {QuestionRow} from './QuestionRow'
 
 type Props = {
     topicPath: string | null
 }
 
 /**
- * QuestionsList displays QUIZ questions
- * for the currently selected topic.
+ * QuestionsList loads and displays QUIZ questions
+ * for the selected topic.
+ *
+ * It owns the expanded-question UI state.
  */
 export function QuestionsList({topicPath}: Props) {
     const {questions, loading, error} = useQuestions(topicPath)
+
+    // ✅ which question is currently expanded
+    const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
 
     if (!topicPath) {
         return (
@@ -39,16 +46,20 @@ export function QuestionsList({topicPath}: Props) {
                 Questions
             </h2>
 
-            <ul className="space-y-2">
-                {questions.map(q => (
-                    <li
-                        key={q.itemId}
-                        className="p-3 border rounded hover:bg-gray-100 cursor-pointer"
-                    >
-                        {q.prompt}
-                    </li>
+            <div className="space-y-3">
+                {questions.map(question => (
+                    <QuestionRow
+                        key={question.itemId}
+                        question={question}
+                        expanded={expandedItemId === question.itemId}
+                        onToggle={() =>
+                            setExpandedItemId(prev =>
+                                prev === question.itemId ? null : question.itemId
+                            )
+                        }
+                    />
                 ))}
-            </ul>
+            </div>
         </div>
     )
 }
