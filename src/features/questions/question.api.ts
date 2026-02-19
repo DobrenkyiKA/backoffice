@@ -10,7 +10,7 @@ export async function fetchQuizQuestions(
     accessToken: string
 ): Promise<QuizQuestion[]> {
     const response = await fetch(
-        `${QUESTION_API}/learning/topics/${encodeURIComponent(topicPath)}/items?format=QUIZ&state=ANY&limit=20`,
+        `${QUESTION_API}/learning/topics?topicPath=${encodeURIComponent(topicPath)}&format=QUIZ&state=ANY&limit=20`,
         {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
