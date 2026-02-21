@@ -1,65 +1,48 @@
 'use client'
 
-import {useState} from 'react'
-import {useQuestions} from './useQuestions'
-import {QuestionRow} from './QuestionRow'
+import { useEffect, useState } from 'react'
+import { fetchQuestions } from './question.api'
+import { QuestionRow } from './QuestionRow'
+import { useAuth } from '@/auth/useAuth'
+import {QuestionResponse} from "@/features/questions/question.types";
+import { Filters } from './QuestionFilters'
 
 type Props = {
-    topicPath: string | null
+    topicKeys: string[]
+    filters: Filters
 }
 
-/**
- * QuestionsList loads and displays QUIZ questions
- * for the selected topic.
- *
- * It owns the expanded-question UI state.
- */
-export function QuestionsList({topicPath}: Props) {
-    const {questions, loading, error} = useQuestions(topicPath)
+export function QuestionsList({ topicKeys, filters }: Props) {
+    const { accessToken } = useAuth()
+    const [questions, setQuestions] = useState<QuestionResponse[]>([])
+    const [expandedId, setExpandedId] = useState<string | null>(null)
 
-    // ✅ which question is currently expanded
-    const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
+    useEffect(() => {
+        if (!accessToken) return
 
-    if (!topicPath) {
-        return (
-            <div className="text-gray-500">
-                Select a topic to see questions
-            </div>
-        )
-    }
-
-    if (loading) {
-        return <div>Loading questions…</div>
-    }
-
-    if (error) {
-        return <div className="text-red-600">{error}</div>
-    }
-
-    if (questions.length === 0) {
-        return <div>No questions for this topic</div>
-    }
+        fetchQuestions(
+            {
+                topicKeys,
+                difficulties: filters.difficulties,
+                formats: filters.formats,
+                labels: filters.labels,
+            },
+            accessToken
+        ).then(setQuestions)
+    }, [topicKeys, filters, accessToken])
 
     return (
         <div>
-            <h2 className="text-lg font-semibold mb-4">
-                Questions
-            </h2>
-
-            <div className="space-y-3">
-                {questions.map(question => (
-                    <QuestionRow
-                        key={question.itemId}
-                        question={question}
-                        expanded={expandedItemId === question.itemId}
-                        onToggle={() =>
-                            setExpandedItemId(prev =>
-                                prev === question.itemId ? null : question.itemId
-                            )
-                        }
-                    />
-                ))}
-            </div>
+            {questions.map(q => (
+                <QuestionRow
+                    key={q.id}
+                    question={q}
+                    expanded={expandedId === q.id}
+                    onToggle={() =>
+                        setExpandedId(prev => (prev === q.id ? null : q.id))
+                    }
+                />
+            ))}
         </div>
     )
 }

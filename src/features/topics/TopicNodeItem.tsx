@@ -4,26 +4,22 @@ type Props = {
     node: TopicNode
     level: number
     expandedPaths: Set<string>
-    selectedPath: string | null
-    onToggle: (path: string) => void
-    onSelect: (path: string) => void
+    selectedTopicKeys: string[]
+    onToggleExpand: (path: string) => void
+    onToggleSelect: (key: string) => void
 }
 
-/**
- * TopicNodeItem renders a single topic row.
- * It is stateless and purely presentational.
- */
 export function TopicNodeItem({
                                   node,
                                   level,
                                   expandedPaths,
-                                  selectedPath,
-                                  onToggle,
-                                  onSelect,
+                                  selectedTopicKeys,
+                                  onToggleExpand,
+                                  onToggleSelect,
                               }: Props) {
     const { topic, children } = node
     const isExpanded = expandedPaths.has(topic.path)
-    const isSelected = selectedPath === topic.path
+    const isSelected = selectedTopicKeys.includes(topic.key)
     const hasChildren = children.length > 0
 
     return (
@@ -35,12 +31,12 @@ export function TopicNodeItem({
         `}
                 style={{ paddingLeft: level * 16 }}
             >
-                {/* Expand / collapse */}
+                {/* Expand / collapse arrow */}
                 {hasChildren ? (
                     <span
                         onClick={e => {
-                            e.stopPropagation() // prevent selecting when toggling
-                            onToggle(topic.path)
+                            e.stopPropagation()
+                            onToggleExpand(topic.path)
                         }}
                         className="w-4 inline-flex justify-center"
                     >
@@ -50,10 +46,10 @@ export function TopicNodeItem({
                     <span className="w-4" />
                 )}
 
-                {/* Select topic */}
+                {/* Topic label */}
                 <span
-                    className="text-sm truncate"
-                    onClick={() => onSelect(topic.path)}
+                    className="text-sm truncate flex-1"
+                    onClick={() => onToggleSelect(topic.key)}
                 >
           {topic.name}
         </span>
@@ -66,9 +62,9 @@ export function TopicNodeItem({
                         node={child}
                         level={level + 1}
                         expandedPaths={expandedPaths}
-                        selectedPath={selectedPath}
-                        onToggle={onToggle}
-                        onSelect={onSelect}
+                        selectedTopicKeys={selectedTopicKeys}
+                        onToggleExpand={onToggleExpand}
+                        onToggleSelect={onToggleSelect}
                     />
                 ))}
         </div>
