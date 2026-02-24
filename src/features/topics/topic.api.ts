@@ -5,7 +5,8 @@ const QUESTION_API = process.env.NEXT_PUBLIC_QUESTION_API_URL
 export async function fetchTopics(
     accessToken: string
 ) : Promise<Topic[]> {
-    const response = await fetch(`${QUESTION_API}/topics`, {
+    const response =
+        await fetch(`${QUESTION_API}/topics`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },

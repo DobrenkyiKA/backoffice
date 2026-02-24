@@ -1,20 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import {useState} from 'react'
+import {useAuth} from "@/auth/useAuth";
+import {submitTopicsDeclaration} from "@/features/pipeline/pipeline.api";
 
 export default function CreatePipelinePage() {
+    const {accessToken} = useAuth()
+    const [loading, setLoading] = useState(true)
     const [yaml, setYaml] = useState('')
+    const [error, setError] = useState<string | null>(null)
     const [pipelineId, setPipelineId] = useState<string | null>(null)
 
     function submit() {
-        fetch('http://localhost:8081/pipeline/step-0', {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: yaml,
-        })
-            .then(res => res.json())
-            .then(data => setPipelineId(data.pipelineId))
+        if (!accessToken) return
+        setLoading(true)
+        submitTopicsDeclaration(accessToken, yaml)
+            .then(pipeline => setPipelineId(pipeline.pipelineId))
+            .catch(err => setError(err.message))
+            .finally(() => setLoading(false))
     }
+
+    // if (loading) return <div>Loading topics…</div>
+    // if (error) return <div className="text-red-600">{error}</div>
 
     return (
         <div className="p-6">
