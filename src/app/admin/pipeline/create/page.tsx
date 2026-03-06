@@ -9,13 +9,13 @@ export default function CreatePipelinePage() {
     const [loading, setLoading] = useState(true)
     const [yaml, setYaml] = useState('')
     const [error, setError] = useState<string | null>(null)
-    const [pipelineId, setPipelineId] = useState<string | null>(null)
+    const [pipelineKey, setPipelineKey] = useState<string | null>(null)
 
     function submit() {
         if (!accessToken) return
         setLoading(true)
         submitTopicsDeclaration(accessToken, yaml)
-            .then(pipeline => setPipelineId(pipeline.pipelineId))
+            .then(pipeline => setPipelineKey(pipeline.pipelineKey))
             .catch(err => setError(err.message))
             .finally(() => setLoading(false))
     }
@@ -41,9 +41,9 @@ export default function CreatePipelinePage() {
                 Create Pipeline
             </button>
 
-            {pipelineId && (
+            {pipelineKey && (
                 <p className="mt-4">
-                    Pipeline created: <strong>{pipelineId}</strong>
+                    Pipeline created: <strong>{pipelineKey}</strong>
                 </p>
             )}
         </div>

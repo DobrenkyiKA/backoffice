@@ -1,4 +1,4 @@
 export type Pipeline = {
-    pipelineId: string
+    pipelineKey: string
     status: string
 }
