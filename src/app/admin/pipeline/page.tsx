@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react'
 import {useAuth} from "@/auth/useAuth";
-import {getPipelines} from "@/features/pipeline/pipeline.api";
+import {getPipelines, deletePipeline} from "@/features/pipeline/pipeline.api";
 import {Pipeline} from "@/features/pipeline/pipeline.types";
 import Link from 'next/link';
 
@@ -12,7 +12,7 @@ export default function PipelineListPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
+    const fetchPipelines = () => {
         if (!accessToken) return
 
         setLoading(true)
@@ -20,7 +20,23 @@ export default function PipelineListPage() {
             .then(setPipelines)
             .catch(err => setError(err.message))
             .finally(() => setLoading(false))
+    }
+
+    useEffect(() => {
+        fetchPipelines()
     }, [accessToken])
+
+    const handleDelete = async (pipelineName: string) => {
+        if (!accessToken) return
+        if (!confirm(`Are you sure you want to delete pipeline "${pipelineName}"?`)) return
+
+        try {
+            await deletePipeline(accessToken, pipelineName)
+            setPipelines(pipelines.filter(p => p.pipelineName !== pipelineName))
+        } catch (err: any) {
+            alert(err.message)
+        }
+    }
 
     if (loading) return <div className="p-6 text-gray-600">Loading pipelines...</div>
     if (error) return <div className="p-6 text-red-600">Error: {error}</div>
@@ -45,12 +61,13 @@ export default function PipelineListPage() {
                             <th className="text-left p-3 font-semibold">Status</th>
                             <th className="text-left p-3 font-semibold">Created</th>
                             <th className="text-left p-3 font-semibold">Modified</th>
+                            <th className="text-left p-3 font-semibold">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {pipelines.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="p-3 text-center">
+                                <td colSpan={5} className="p-3 text-center">
                                     No pipelines found.
                                 </td>
                             </tr>
@@ -69,6 +86,14 @@ export default function PipelineListPage() {
                                     </td>
                                     <td className="p-3 text-sm">{new Date(pipeline.createdAt).toLocaleString()}</td>
                                     <td className="p-3 text-sm">{new Date(pipeline.updatedAt).toLocaleString()}</td>
+                                    <td className="p-3 text-sm">
+                                        <button
+                                            onClick={() => handleDelete(pipeline.pipelineName)}
+                                            className="text-red-600 hover:text-red-800 font-medium"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
                                 </tr>
                             ))
                         )}

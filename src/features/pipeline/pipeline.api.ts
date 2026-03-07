@@ -40,3 +40,19 @@ export async function getPipelines(
 
     return response.json()
 }
+
+export async function deletePipeline(
+    accessToken: string,
+    pipelineName: string
+) : Promise<void> {
+    const response =
+        await fetch(`${AI_API}/pipeline/${pipelineName}`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+            method: 'DELETE',
+        })
+    if (!response.ok) {
+        throw new Error('Failed to delete Pipeline.')
+    }
+}
