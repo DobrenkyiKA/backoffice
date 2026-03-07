@@ -17,7 +17,8 @@ export async function submitTopicsDeclaration(
             body: yaml,
         })
     if (!response.ok) {
-        throw new Error('Failed to create Pipeline.')
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || 'Failed to create Pipeline.')
     }
 
     return response.json()
