@@ -8,7 +8,7 @@ export async function submitTopicsDeclaration(
 ) : Promise<Pipeline> {
 
     const response =
-        await fetch(`${AI_API}/pipeline/step-0`, {
+        await fetch(`${AI_API}/pipeline`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'text/plain'
