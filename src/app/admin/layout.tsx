@@ -3,6 +3,7 @@
 import { useAuth } from '@/auth/useAuth'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import Link from 'next/link'
 
 export default function AdminLayout({
                                         children,
@@ -28,9 +29,15 @@ export default function AdminLayout({
 
     return (
         <div className="min-h-screen flex flex-col">
-            <header className="bg-gray-900 text-white p-4 flex justify-between">
-                <span>PIQ Admin</span>
-                <button onClick={logout} className="text-sm underline">
+            <header className="bg-gray-900 text-white p-4 flex justify-between items-center">
+                <div className="flex gap-6 items-center">
+                    <span className="font-bold">PIQ Admin</span>
+                    <nav className="flex gap-4">
+                        <Link href="/admin" className="text-sm hover:underline text-gray-300 hover:text-white transition-colors">Questions</Link>
+                        <Link href="/admin/pipeline" className="text-sm hover:underline text-gray-300 hover:text-white transition-colors">Pipelines</Link>
+                    </nav>
+                </div>
+                <button onClick={logout} className="text-sm underline hover:text-gray-300 transition-colors">
                     Logout
                 </button>
             </header>
