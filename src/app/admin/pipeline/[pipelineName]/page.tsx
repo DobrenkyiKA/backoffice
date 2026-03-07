@@ -151,11 +151,11 @@ export default function PipelineDetailsPage() {
                     <Link href="/admin/pipeline" className="text-blue-600 hover:underline text-sm mb-2 inline-block font-medium">
                         &larr; Back to Pipelines
                     </Link>
-                    <h1 className="text-3xl font-extrabold text-gray-900">Pipeline: {pipelineName}</h1>
+                    <h1 className="text-2xl font-extrabold text-gray-300">Pipeline: {pipelineName}</h1>
                 </div>
                 <div className="text-right flex items-center gap-6">
                     <div className="flex flex-col items-end">
-                        <div className="text-sm font-semibold text-gray-700 mb-1">Overall Status</div>
+                        <div className="text-sm font-semibold text-gray-300 mb-1">Pipeline Status</div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                             pipeline?.status.includes('PENDING') ? "bg-yellow-100 text-yellow-800" :
                             pipeline?.status.includes('APPROVED') || pipeline?.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
@@ -166,7 +166,7 @@ export default function PipelineDetailsPage() {
                     </div>
                     
                     <div className="flex flex-col items-end border-l pl-6 border-gray-200">
-                        <div className="text-sm font-semibold text-gray-700 mb-1">Actions</div>
+                        <div className="text-sm font-semibold text-gray-300 mb-1">Actions</div>
                         <div className="flex items-center gap-2">
                              <select
                                 value={runFromStep}
