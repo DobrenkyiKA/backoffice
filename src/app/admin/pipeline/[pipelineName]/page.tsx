@@ -151,11 +151,11 @@ export default function PipelineDetailsPage() {
                     <Link href="/admin/pipeline" className="text-blue-600 hover:underline text-sm mb-2 inline-block font-medium">
                         &larr; Back to Pipelines
                     </Link>
-                    <h1 className="text-2xl font-extrabold text-gray-300">Pipeline: {pipelineName}</h1>
+                    <h1 className="text-2xl font-extrabold text-gray-800">Pipeline: {pipelineName}</h1>
                 </div>
                 <div className="text-right flex items-center gap-6">
                     <div className="flex flex-col items-end">
-                        <div className="text-sm font-semibold text-gray-300 mb-1">Pipeline Status</div>
+                        <div className="text-sm font-semibold text-gray-700 mb-1">Pipeline Status</div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                             pipeline?.status.includes('PENDING') ? "bg-yellow-100 text-yellow-800" :
                             pipeline?.status.includes('APPROVED') || pipeline?.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
@@ -166,12 +166,12 @@ export default function PipelineDetailsPage() {
                     </div>
                     
                     <div className="flex flex-col items-end border-l pl-6 border-gray-200">
-                        <div className="text-sm font-semibold text-gray-300 mb-1">Actions</div>
+                        <div className="text-sm font-semibold text-gray-700 mb-1">Actions</div>
                         <div className="flex items-center gap-2">
                              <select
                                 value={runFromStep}
                                 onChange={(e) => setRunFromStep(parseInt(e.target.value))}
-                                className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             >
                                 {STEPS.map(s => (
                                     <option key={s.id} value={s.id}>From {s.label}</option>
@@ -252,7 +252,7 @@ export default function PipelineDetailsPage() {
                             <select
                                 value={artifactStatus}
                                 onChange={(e) => setArtifactStatus(e.target.value as ArtifactStatus)}
-                                className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             >
                                 <option value="PENDING_FOR_APPROVAL">Pending Approval</option>
                                 <option value="APPROVED">Approved</option>
