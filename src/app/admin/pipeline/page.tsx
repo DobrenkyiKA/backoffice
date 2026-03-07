@@ -40,31 +40,35 @@ export default function PipelineListPage() {
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                     <thead>
-                        <tr className="bg-gray-100 border-b">
+                        <tr className="bg-gray-600 border-b">
                             <th className="text-left p-3 font-semibold">Name</th>
                             <th className="text-left p-3 font-semibold">Status</th>
+                            <th className="text-left p-3 font-semibold">Created</th>
+                            <th className="text-left p-3 font-semibold">Modified</th>
                         </tr>
                     </thead>
                     <tbody>
                         {pipelines.length === 0 ? (
                             <tr>
-                                <td colSpan={2} className="p-3 text-center text-gray-500">
+                                <td colSpan={4} className="p-3 text-center">
                                     No pipelines found.
                                 </td>
                             </tr>
                         ) : (
                             pipelines.map((pipeline) => (
-                                <tr key={pipeline.pipelineKey} className="border-b hover:bg-gray-50">
-                                    <td className="p-3 font-medium">{pipeline.pipelineKey}</td>
+                                <tr key={pipeline.pipelineName} className="border-b hover:bg-blue-600">
+                                    <td className="p-3 font-medium">{pipeline.pipelineName}</td>
                                     <td className="p-3">
                                         <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                            pipeline.status === 'WAITING_FOR_APPROVAL' ? 'bg-yellow-100 text-yellow-800' :
+                                            pipeline.status === 'WAITING_FOR_APPROVAL' ? "bg-yellow-300 text-yellow-800" :
                                             pipeline.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                                             'bg-blue-100 text-blue-800'
                                         }`}>
                                             {pipeline.status}
                                         </span>
                                     </td>
+                                    <td className="p-3 text-sm">{new Date(pipeline.createdAt).toLocaleString()}</td>
+                                    <td className="p-3 text-sm">{new Date(pipeline.updatedAt).toLocaleString()}</td>
                                 </tr>
                             ))
                         )}

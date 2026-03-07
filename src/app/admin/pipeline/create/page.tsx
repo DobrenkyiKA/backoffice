@@ -19,7 +19,7 @@ export default function CreatePipelinePage() {
         setError(null)
         submitTopicsDeclaration(accessToken, yaml)
             .then(pipeline => {
-                setPipelineKey(pipeline.pipelineKey)
+                setPipelineKey(pipeline.pipelineName)
                 router.push('/admin/pipeline')
             })
             .catch(err => setError(err.message))
