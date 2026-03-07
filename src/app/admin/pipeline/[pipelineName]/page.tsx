@@ -3,7 +3,7 @@
 import {useEffect, useState} from 'react'
 import {useParams, useRouter} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline} from "@/features/pipeline/pipeline.types";
 import Link from 'next/link';
 
@@ -23,6 +23,8 @@ export default function PipelineDetailsPage() {
     const [loading, setLoading] = useState(true)
     const [artifactLoading, setArtifactLoading] = useState(false)
     const [saving, setSaving] = useState(false)
+    const [running, setRunning] = useState(false)
+    const [runFromStep, setRunFromStep] = useState<number>(0)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
@@ -77,6 +79,56 @@ export default function PipelineDetailsPage() {
         }
     }
 
+    const handleRunPipelineFrom = async () => {
+        if (!accessToken || !pipelineName) return
+        
+        setRunning(true)
+        setError(null)
+        setSuccess(null)
+        
+        try {
+            const updated = await runPipelineFrom(accessToken, pipelineName as string, runFromStep)
+            setPipeline(updated)
+            setSuccess(`Pipeline run from step ${runFromStep} completed successfully!`)
+            // Refresh current artifact if needed
+            if (selectedStep >= runFromStep) {
+                const stepInfo = updated.steps.find(s => s.step === selectedStep)
+                if (stepInfo?.status) {
+                    const newYaml = await getArtifactByStep(accessToken, pipelineName as string, selectedStep)
+                    setYaml(newYaml)
+                    setArtifactStatus(stepInfo.status)
+                }
+            }
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setRunning(false)
+        }
+    }
+
+    const handleRunStep = async () => {
+        if (!accessToken || !pipelineName || selectedStep === null) return
+        
+        setRunning(true)
+        setError(null)
+        setSuccess(null)
+        
+        try {
+            const updated = await runStep(accessToken, pipelineName as string, selectedStep)
+            setPipeline(updated)
+            setSuccess(`Step ${selectedStep} generation completed successfully!`)
+            
+            const newYaml = await getArtifactByStep(accessToken, pipelineName as string, selectedStep)
+            setYaml(newYaml)
+            const stepInfo = updated.steps.find(s => s.step === selectedStep)
+            if (stepInfo?.status) setArtifactStatus(stepInfo.status)
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setRunning(false)
+        }
+    }
+
     const getStepColor = (stepId: number) => {
         const step = pipeline?.steps.find(s => s.step === stepId)
         if (!step || step.status === null) return 'bg-gray-200 text-gray-500 border-gray-300'
@@ -101,15 +153,41 @@ export default function PipelineDetailsPage() {
                     </Link>
                     <h1 className="text-3xl font-extrabold text-gray-900">Pipeline: {pipelineName}</h1>
                 </div>
-                <div className="text-right">
-                    <div className="text-sm font-semibold text-gray-700 mb-1">Overall Status</div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        pipeline?.status.includes('PENDING') ? "bg-yellow-100 text-yellow-800" :
-                        pipeline?.status.includes('APPROVED') || pipeline?.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                        'bg-blue-100 text-blue-800'
-                    }`}>
-                        {pipeline?.status}
-                    </span>
+                <div className="text-right flex items-center gap-6">
+                    <div className="flex flex-col items-end">
+                        <div className="text-sm font-semibold text-gray-700 mb-1">Overall Status</div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                            pipeline?.status.includes('PENDING') ? "bg-yellow-100 text-yellow-800" :
+                            pipeline?.status.includes('APPROVED') || pipeline?.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                            'bg-blue-100 text-blue-800'
+                        }`}>
+                            {pipeline?.status}
+                        </span>
+                    </div>
+                    
+                    <div className="flex flex-col items-end border-l pl-6 border-gray-200">
+                        <div className="text-sm font-semibold text-gray-700 mb-1">Actions</div>
+                        <div className="flex items-center gap-2">
+                             <select
+                                value={runFromStep}
+                                onChange={(e) => setRunFromStep(parseInt(e.target.value))}
+                                className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            >
+                                {STEPS.map(s => (
+                                    <option key={s.id} value={s.id}>From {s.label}</option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={handleRunPipelineFrom}
+                                disabled={running || loading}
+                                className={`px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-indigo-700 transition-all ${
+                                    (running || loading) ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            >
+                                {running ? 'Running...' : 'Run Pipeline'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -182,10 +260,19 @@ export default function PipelineDetailsPage() {
                             </select>
                         </div>
                         <button
+                            onClick={handleRunStep}
+                            disabled={running || artifactLoading}
+                            className={`px-5 py-2 ${pipeline?.steps.find(s => s.step === selectedStep)?.status ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-bold text-sm shadow-md transition-all ${
+                                (running || artifactLoading) ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                        >
+                            {running ? 'Generating...' : (pipeline?.steps.find(s => s.step === selectedStep)?.status ? 'Regenerate Artifact' : 'Generate Artifact')}
+                        </button>
+                        <button
                             onClick={handleSave}
-                            disabled={saving || artifactLoading || !yaml}
+                            disabled={saving || artifactLoading || !yaml || running}
                             className={`px-5 py-2 bg-blue-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-blue-700 transition-all ${
-                                (saving || artifactLoading || !yaml) ? 'opacity-50 cursor-not-allowed' : ''
+                                (saving || artifactLoading || !yaml || running) ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                         >
                             {saving ? 'Saving...' : 'Save Artifact'}

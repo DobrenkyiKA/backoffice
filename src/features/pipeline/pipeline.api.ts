@@ -157,3 +157,39 @@ export async function deletePipeline(
         throw new Error('Failed to delete Pipeline.')
     }
 }
+
+export async function runStep(
+    accessToken: string,
+    pipelineName: string,
+    step: number
+): Promise<Pipeline> {
+    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/run/${step}`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'POST',
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || `Failed to run step ${step}.`)
+    }
+    return response.json()
+}
+
+export async function runPipelineFrom(
+    accessToken: string,
+    pipelineName: string,
+    step: number
+): Promise<Pipeline> {
+    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/run-from/${step}`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'POST',
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || `Failed to run pipeline from step ${step}.`)
+    }
+    return response.json()
+}
