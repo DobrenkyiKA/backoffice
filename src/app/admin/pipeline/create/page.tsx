@@ -16,12 +16,12 @@ export default function CreatePipelinePage() {
     function submit() {
         if (!accessToken) return
 
-        const normalized = name.trim().replace(/\s+/g, '-');
+        const normalized = name.trim().replace(/\s+/g, '-').toLowerCase();
         if (!normalized) {
             setError("Pipeline name cannot be empty")
             return
         }
-        if (!/^[a-zA-Z0-9-]+$/.test(normalized)) {
+        if (!/^[a-z0-9-]+$/.test(normalized)) {
             setError("Pipeline name can only contain alphanumeric characters and '-'")
             return
         }
@@ -56,11 +56,11 @@ export default function CreatePipelinePage() {
                     className="w-full border p-2 bg-gray-800 text-white rounded"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder="e.g. Java-Core-Interview-v1"
+                    placeholder="e.g. java-core-interview-v1"
                     disabled={loading}
                 />
                 <p className="mt-2 text-xs text-gray-400">
-                    Whitespaces will be replaced with "-", only alphanumeric and "-" symbols are allowed.
+                    Whitespaces will be replaced with "-", only alphanumeric and "-" symbols are allowed. The name will be lower-cased.
                 </p>
 
                 <div className="mt-6 flex items-center gap-4">
