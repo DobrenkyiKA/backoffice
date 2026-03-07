@@ -2,19 +2,19 @@ import {ArtifactStatus, Pipeline} from "@/features/pipeline/pipeline.types";
 
 const AI_API = process.env.NEXT_PUBLIC_AI_API_URL
 
-export async function submitTopicsDeclaration(
+export async function createPipeline(
     accessToken: string,
-    yaml: string
+    name: string
 ) : Promise<Pipeline> {
 
     const response =
         await fetch(`${AI_API}/pipeline`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'text/plain'
+                'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: yaml,
+            body: JSON.stringify({ name }),
         })
     if (!response.ok) {
         const errorData = await response.json().catch(() => null)
