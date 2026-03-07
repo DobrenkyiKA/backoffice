@@ -5,9 +5,11 @@ import {useAuth} from "@/auth/useAuth";
 import {getPipelines, deletePipeline} from "@/features/pipeline/pipeline.api";
 import {Pipeline} from "@/features/pipeline/pipeline.types";
 import Link from 'next/link';
+import {useRouter} from "next/navigation";
 
 export default function PipelineListPage() {
     const {accessToken} = useAuth()
+    const router = useRouter()
     const [pipelines, setPipelines] = useState<Pipeline[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -73,7 +75,11 @@ export default function PipelineListPage() {
                             </tr>
                         ) : (
                             pipelines.map((pipeline) => (
-                                <tr key={pipeline.pipelineName} className="border-b hover:bg-blue-600">
+                                <tr
+                                    key={pipeline.pipelineName}
+                                    className="border-b hover:bg-gray-700 cursor-pointer"
+                                    onClick={() => router.push(`/admin/pipeline/${pipeline.pipelineName}`)}
+                                >
                                     <td className="p-3 font-medium">{pipeline.pipelineName}</td>
                                     <td className="p-3">
                                         <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -88,7 +94,10 @@ export default function PipelineListPage() {
                                     <td className="p-3 text-sm">{new Date(pipeline.updatedAt).toLocaleString()}</td>
                                     <td className="p-3 text-sm">
                                         <button
-                                            onClick={() => handleDelete(pipeline.pipelineName)}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleDelete(pipeline.pipelineName)
+                                            }}
                                             className="text-red-600 hover:text-red-800 font-medium"
                                         >
                                             Delete
