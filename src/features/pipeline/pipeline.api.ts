@@ -1,4 +1,4 @@
-import {Pipeline} from "@/features/pipeline/pipeline.types";
+import {ArtifactStatus, Pipeline} from "@/features/pipeline/pipeline.types";
 
 const AI_API = process.env.NEXT_PUBLIC_AI_API_URL
 
@@ -94,6 +94,49 @@ export async function updatePipeline(
     if (!response.ok) {
         const errorData = await response.json().catch(() => null)
         throw new Error(errorData?.message || 'Failed to update Pipeline.')
+    }
+
+    return response.json()
+}
+
+export async function getArtifactByStep(
+    accessToken: string,
+    pipelineName: string,
+    step: number
+) : Promise<string> {
+    const response =
+        await fetch(`${AI_API}/pipeline/${pipelineName}/artifact/${step}`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+            method: 'GET',
+        })
+    if (!response.ok) {
+        throw new Error(`Failed to fetch Pipeline artifact for step ${step}.`)
+    }
+
+    return response.text()
+}
+
+export async function updateArtifactByStep(
+    accessToken: string,
+    pipelineName: string,
+    step: number,
+    content: string,
+    status: ArtifactStatus
+) : Promise<Pipeline> {
+    const response =
+        await fetch(`${AI_API}/pipeline/${pipelineName}/artifact/${step}`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            method: 'PUT',
+            body: JSON.stringify({ content, status }),
+        })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || `Failed to update Pipeline artifact for step ${step}.`)
     }
 
     return response.json()
