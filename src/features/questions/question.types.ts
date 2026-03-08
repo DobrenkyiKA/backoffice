@@ -3,7 +3,6 @@
  * This mirrors the API contract.
  */
 export type QuestionResponse = {
-    id: string
     key: string
     prompt: string
     difficulty: 'EASY' | 'MEDIUM' | 'HARD'

@@ -35,11 +35,11 @@ export function QuestionsList({ topicKeys, filters }: Props) {
         <div>
             {questions.map(q => (
                 <QuestionRow
-                    key={q.id}
+                    key={q.key}
                     question={q}
-                    expanded={expandedId === q.id}
+                    expanded={expandedId === q.key}
                     onToggle={() =>
-                        setExpandedId(prev => (prev === q.id ? null : q.id))
+                        setExpandedId(prev => (prev === q.key ? null : q.key))
                     }
                 />
             ))}
