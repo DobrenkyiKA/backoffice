@@ -17,3 +17,66 @@ export async function fetchTopics(
 
     return response.json()
 }
+
+export async function createTopic(
+    accessToken: string,
+    key: string,
+    name: string,
+    parentPath: string | null
+): Promise<Topic> {
+    const response = await fetch(`${QUESTION_API}/admin/topics`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ key, name, parentPath }),
+    })
+
+    if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create topic')
+    }
+
+    return response.json()
+}
+
+export async function updateTopic(
+    accessToken: string,
+    oldKey: string,
+    newKey: string,
+    name: string
+): Promise<Topic> {
+    const response = await fetch(`${QUESTION_API}/admin/topics/${oldKey}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ key: newKey, name }),
+    })
+
+    if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update topic')
+    }
+
+    return response.json()
+}
+
+export async function deleteTopic(
+    accessToken: string,
+    key: string
+): Promise<void> {
+    const response = await fetch(`${QUESTION_API}/admin/topics/${key}`, {
+        method: 'DELETE',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    })
+
+    if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete topic')
+    }
+}

@@ -6,14 +6,17 @@ export function buildTopicTree(topics: Topic[]): TopicNode[] {
 
     // Create all nodes
     for (const topic of topics) {
-        nodeMap.set(topic.id, {topic, children: []})
+        nodeMap.set(topic.path, {topic, children: []})
     }
 
     // Attach children
     for (const topic of topics) {
-        const node = nodeMap.get(topic.id)!
-        if (topic.parentId) {
-            const parent = nodeMap.get(topic.parentId)
+        const node = nodeMap.get(topic.path)!
+        const lastSlash = topic.path.lastIndexOf('/')
+        const parentPath = lastSlash > 0 ? topic.path.substring(0, lastSlash) : null
+
+        if (parentPath && nodeMap.has(parentPath)) {
+            const parent = nodeMap.get(parentPath)
             if (parent) {
                 parent.children.push(node)
             }
