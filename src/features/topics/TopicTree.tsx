@@ -79,7 +79,7 @@ export function TopicTree({
 
             <button
                 onClick={() => setAction({ type: 'create', parentPath: null })}
-                className="mt-4 w-full py-2 px-4 border border-dashed border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 hover:border-gray-400 text-sm font-medium"
+                className="mt-4 w-full py-2 px-4 border border-dashed border-gray-700 rounded-md text-gray-300 hover:bg-gray-800 hover:border-gray-600 text-sm font-medium transition-colors"
             >
                 + Add Topic
             </button>
@@ -104,13 +104,13 @@ export function TopicTree({
                 <Modal title="Delete Topic" onClose={() => { setAction(null); setDeleteError(null); }}>
                     <div className="space-y-4">
                         {deleteError && <div className="text-red-500 text-sm mb-4">{deleteError}</div>}
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-300">
                             Are you sure you want to delete topic <strong>{action.topic.name}</strong>?
                         </p>
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => { setAction(null); setDeleteError(null); }}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700 transition-colors"
                             >
                                 Cancel
                             </button>

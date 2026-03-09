@@ -17,13 +17,13 @@ export function ContextMenu({ x, y, onClose, options }: ContextMenuProps) {
                 }}
             />
             <div
-                className="fixed z-50 bg-white border border-gray-200 shadow-md py-1 rounded w-32"
+                className="fixed z-50 bg-gray-900 text-white border border-gray-700 shadow-md py-1 rounded w-32"
                 style={{ top: y, left: x }}
             >
                 {options.map((option, idx) => (
                     <button
                         key={idx}
-                        className="w-full text-left px-4 py-1.5 text-sm hover:bg-blue-600 hover:text-white"
+                        className="w-full text-left px-4 py-1.5 text-sm hover:bg-blue-600 hover:text-white transition-colors"
                         onClick={() => {
                             option.onClick()
                             onClose()
