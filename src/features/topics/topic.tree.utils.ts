@@ -24,5 +24,12 @@ export function buildTopicTree(topics: Topic[]): TopicNode[] {
             roots.push(node)
         }
     }
+
+    const sortNodes = (nodes: TopicNode[]) => {
+        nodes.sort((a, b) => a.topic.name.localeCompare(b.topic.name))
+        nodes.forEach(node => sortNodes(node.children))
+    }
+
+    sortNodes(roots)
     return roots
 }
