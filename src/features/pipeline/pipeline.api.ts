@@ -214,3 +214,20 @@ export async function runPipelineFrom(
     }
     return response.json()
 }
+
+export async function publishStep0Artifact(
+    accessToken: string,
+    pipelineName: string
+): Promise<Pipeline> {
+    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/publish-step-0`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'POST',
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || `Failed to publish Step 0 artifact.`)
+    }
+    return response.json()
+}

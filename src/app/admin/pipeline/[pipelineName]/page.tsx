@@ -1,9 +1,9 @@
 'use client'
 
 import {useEffect, useState} from 'react'
-import {useParams, useRouter} from 'next/navigation'
+import {useParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishStep0Artifact} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline} from "@/features/pipeline/pipeline.types";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
@@ -27,6 +27,7 @@ export default function PipelineDetailsPage() {
     const [artifactLoading, setArtifactLoading] = useState(false)
     const [saving, setSaving] = useState(false)
     const [running, setRunning] = useState(false)
+    const [publishing, setPublishing] = useState(false)
     const [updatingTopic, setUpdatingTopic] = useState(false)
     const [runFromStep, setRunFromStep] = useState<number>(0)
     const [error, setError] = useState<string | null>(null)
@@ -80,8 +81,8 @@ export default function PipelineDetailsPage() {
             const updated = await updatePipelineMetadata(accessToken, pipelineName as string, newTopicKey)
             setPipeline(updated)
             setSuccess(`Topic updated to ${newTopicKey} successfully!`)
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError((err as Error).message)
         } finally {
             setUpdatingTopic(false)
         }
@@ -98,8 +99,8 @@ export default function PipelineDetailsPage() {
             const updated = await updateArtifactByStep(accessToken, pipelineName as string, selectedStep, yaml, artifactStatus)
             setPipeline(updated)
             setSuccess(`Step ${selectedStep} artifact updated successfully!`)
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError((err as Error).message)
         } finally {
             setSaving(false)
         }
@@ -125,8 +126,8 @@ export default function PipelineDetailsPage() {
                     setArtifactStatus(stepInfo.status)
                 }
             }
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError((err as Error).message)
         } finally {
             setRunning(false)
         }
@@ -148,10 +149,28 @@ export default function PipelineDetailsPage() {
             setYaml(newYaml)
             const stepInfo = updated.steps.find(s => s.step === selectedStep)
             if (stepInfo?.status) setArtifactStatus(stepInfo.status)
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError((err as Error).message)
         } finally {
             setRunning(false)
+        }
+    }
+
+    const handlePublishStep0 = async () => {
+        if (!accessToken || !pipelineName) return
+        
+        setPublishing(true)
+        setError(null)
+        setSuccess(null)
+        
+        try {
+            const updated = await publishStep0Artifact(accessToken, pipelineName as string)
+            setPipeline(updated)
+            setSuccess(`Step 0 (Topics) artifact published successfully!`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        } finally {
+            setPublishing(false)
         }
     }
 
@@ -317,6 +336,19 @@ export default function PipelineDetailsPage() {
                         >
                             {saving ? 'Saving...' : 'Save Artifact'}
                         </button>
+
+                        {selectedStep === 0 && (
+                            <button
+                                onClick={handlePublishStep0}
+                                disabled={publishing || artifactLoading || running || artifactStatus !== 'APPROVED'}
+                                title={artifactStatus !== 'APPROVED' ? "Only approved artifact can be published" : ""}
+                                className={`px-5 py-2 bg-purple-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-purple-700 transition-all ${
+                                    (publishing || artifactLoading || running || artifactStatus !== 'APPROVED') ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            >
+                                {publishing ? 'Publishing...' : 'Publish Artifact'}
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="p-0">
