@@ -19,8 +19,18 @@ export function TopicForm({
                            }: Props) {
     const [key, setKey] = useState(initialKey.toLowerCase().replace(/\s+/g, '-'))
     const [name, setName] = useState(initialName)
+    const [isKeyLocked, setIsKeyLocked] = useState(true)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    const sanitizeKey = (val: string) => val.toLowerCase().replace(/\s+/g, '-')
+
+    const handleNameChange = (newName: string) => {
+        setName(newName)
+        if (isKeyLocked) {
+            setKey(sanitizeKey(newName))
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -47,18 +57,29 @@ export function TopicForm({
                 </div>
             )}
 
-            <div>
+            <div className="relative">
                 <label className="block text-sm font-medium text-gray-300">Key</label>
-                <input
-                    type="text"
-                    required
-                    pattern="[a-z0-9-]+"
-                    title="Key must contain only lowercase letters, numbers, and hyphens"
-                    value={key}
-                    onChange={e => setKey(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                    className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white"
-                    placeholder="e.g. spring-boot"
-                />
+                <div className="mt-1 flex gap-2">
+                    <input
+                        type="text"
+                        required
+                        pattern="[a-z0-9-]+"
+                        title="Key must contain only lowercase letters, numbers, and hyphens"
+                        value={key}
+                        onChange={e => setKey(sanitizeKey(e.target.value))}
+                        readOnly={isKeyLocked}
+                        className={`block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white ${isKeyLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        placeholder="e.g. spring-boot"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setIsKeyLocked(!isKeyLocked)}
+                        className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${isKeyLocked ? 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700' : 'bg-blue-600 text-white border-transparent hover:bg-blue-700'}`}
+                        title={isKeyLocked ? "Unlock key field" : "Lock key field"}
+                    >
+                        🔑
+                    </button>
+                </div>
             </div>
 
             <div>
@@ -67,7 +88,7 @@ export function TopicForm({
                     type="text"
                     required
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={e => handleNameChange(e.target.value)}
                     className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white"
                     placeholder="e.g. Spring Boot"
                 />
