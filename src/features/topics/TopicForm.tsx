@@ -3,8 +3,9 @@ import {useState} from 'react'
 type Props = {
     initialKey?: string
     initialName?: string
+    initialDescription?: string
     parentPath?: string | null
-    onSave: (key: string, name: string) => Promise<void>
+    onSave: (key: string, name: string, description?: string) => Promise<void>
     onCancel: () => void
     isEdit?: boolean
 }
@@ -12,6 +13,7 @@ type Props = {
 export function TopicForm({
                                initialKey = '',
                                initialName = '',
+                               initialDescription = '',
                                parentPath = null,
                                onSave,
                                onCancel,
@@ -19,6 +21,7 @@ export function TopicForm({
                            }: Props) {
     const [key, setKey] = useState(initialKey.toLowerCase().replace(/\s+/g, '-'))
     const [name, setName] = useState(initialName)
+    const [description, setDescription] = useState(initialDescription)
     const [isKeyLocked, setIsKeyLocked] = useState(true)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -37,7 +40,7 @@ export function TopicForm({
         setLoading(true)
         setError(null)
         try {
-            await onSave(key, name)
+            await onSave(key, name, description)
         } catch (err: any) {
             setError(err.message)
             setLoading(false)
@@ -91,6 +94,16 @@ export function TopicForm({
                     onChange={e => handleNameChange(e.target.value)}
                     className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white"
                     placeholder="e.g. Spring Boot"
+                />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-300">Description (optional)</label>
+                <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white h-24"
+                    placeholder="Describe the topic..."
                 />
             </div>
 

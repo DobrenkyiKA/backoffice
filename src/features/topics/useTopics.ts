@@ -25,16 +25,16 @@ export function useTopics() {
         refresh()
     }, [refresh])
 
-    const createTopic = async (key: string, name: string, parentPath: string | null) => {
+    const createTopic = async (key: string, name: string, parentPath: string | null, description?: string) => {
         if (!accessToken) return
-        const newTopic = await api.createTopic(accessToken, key, name, parentPath)
+        const newTopic = await api.createTopic(accessToken, key, name, parentPath, description)
         setTopics(prev => [...prev, newTopic])
         return newTopic
     }
 
-    const updateTopic = async (oldKey: string, newKey: string, name: string) => {
+    const updateTopic = async (oldKey: string, newKey: string, name: string, description?: string) => {
         if (!accessToken) return
-        const updatedTopic = await api.updateTopic(accessToken, oldKey, newKey, name)
+        const updatedTopic = await api.updateTopic(accessToken, oldKey, newKey, name, description)
         setTopics(prev => prev.map(t => t.key === oldKey ? updatedTopic : t))
         // If key changed, we might need to refresh because children paths also changed
         if (oldKey !== updatedTopic.key) {

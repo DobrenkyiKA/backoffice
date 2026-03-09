@@ -22,7 +22,8 @@ export async function createTopic(
     accessToken: string,
     key: string,
     name: string,
-    parentPath: string | null
+    parentPath: string | null,
+    description?: string
 ): Promise<Topic> {
     const response = await fetch(`${QUESTION_API}/admin/topics`, {
         method: 'POST',
@@ -30,7 +31,7 @@ export async function createTopic(
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ key, name, parentPath }),
+        body: JSON.stringify({ key, name, parentPath, description }),
     })
 
     if (!response.ok) {
@@ -45,7 +46,8 @@ export async function updateTopic(
     accessToken: string,
     oldKey: string,
     newKey: string,
-    name: string
+    name: string,
+    description?: string
 ): Promise<Topic> {
     const response = await fetch(`${QUESTION_API}/admin/topics/${encodeURIComponent(oldKey)}`, {
         method: 'PUT',
@@ -53,7 +55,7 @@ export async function updateTopic(
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ key: newKey, name }),
+        body: JSON.stringify({ key: newKey, name, description }),
     })
 
     if (!response.ok) {

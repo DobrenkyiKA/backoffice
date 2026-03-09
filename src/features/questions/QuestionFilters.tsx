@@ -39,11 +39,11 @@ export function QuestionFilters({ filters, onChange }: Props) {
     }
 
     return (
-        <div className="mb-4 space-y-3">
+        <div className="mb-4 flex flex-wrap items-center gap-6">
             {/* Formats */}
-            <div>
+            <div className="flex items-center gap-2">
                 <span className="font-medium text-sm">Format:</span>
-                <div className="flex gap-2 mt-1">
+                <div className="flex gap-2">
                     {['INTERVIEW', 'QUIZ'].map(f => (
                         <button
                             key={f}
@@ -57,7 +57,7 @@ export function QuestionFilters({ filters, onChange }: Props) {
                             className={`px-3 py-1 border rounded text-sm transition-colors
                 ${filters.formats.includes(f)
                                 ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white hover:bg-gray-50'}
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'}
               `}
                         >
                             {f}
@@ -67,9 +67,9 @@ export function QuestionFilters({ filters, onChange }: Props) {
             </div>
 
             {/* Difficulty */}
-            <div>
+            <div className="flex items-center gap-2">
                 <span className="font-medium text-sm">Difficulty:</span>
-                <div className="flex gap-2 mt-1">
+                <div className="flex gap-2">
                     {['EASY', 'MEDIUM', 'HARD'].map(d => (
                         <button
                             key={d}
@@ -83,7 +83,7 @@ export function QuestionFilters({ filters, onChange }: Props) {
                             className={`px-3 py-1 border rounded text-sm transition-colors
                 ${filters.difficulties.includes(d)
                                 ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white hover:bg-gray-50'}
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'}
               `}
                         >
                             {d}
@@ -98,7 +98,7 @@ export function QuestionFilters({ filters, onChange }: Props) {
                 <input
                     type="text"
                     placeholder="e.g. java, spring"
-                    className="border rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-gray-800"
                     value={labelsInput}
                     onChange={e => setLabelsInput(e.target.value)}
                 />
