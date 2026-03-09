@@ -17,7 +17,7 @@ export function TopicForm({
                                onCancel,
                                isEdit = false,
                            }: Props) {
-    const [key, setKey] = useState(initialKey)
+    const [key, setKey] = useState(initialKey.toLowerCase().replace(/\s+/g, '-'))
     const [name, setName] = useState(initialName)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -55,7 +55,7 @@ export function TopicForm({
                     pattern="[a-z0-9-]+"
                     title="Key must contain only lowercase letters, numbers, and hyphens"
                     value={key}
-                    onChange={e => setKey(e.target.value)}
+                    onChange={e => setKey(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
                     className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white"
                     placeholder="e.g. spring-boot"
                 />
