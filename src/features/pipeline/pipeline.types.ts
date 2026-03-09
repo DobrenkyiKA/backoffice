@@ -7,6 +7,7 @@ export type PipelineStep = {
 
 export type Pipeline = {
     pipelineName: string
+    topicKey: string
     status: string
     createdAt: string
     updatedAt: string

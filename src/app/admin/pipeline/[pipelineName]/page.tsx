@@ -3,8 +3,10 @@
 import {useEffect, useState} from 'react'
 import {useParams, useRouter} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline} from "@/features/pipeline/pipeline.types";
+import {fetchTopics} from "@/features/topics/topic.api";
+import {Topic} from "@/features/topics/topic.types";
 import Link from 'next/link';
 
 const STEPS = [
@@ -20,10 +22,12 @@ export default function PipelineDetailsPage() {
     const [selectedStep, setSelectedStep] = useState<number>(0)
     const [yaml, setYaml] = useState<string>('')
     const [artifactStatus, setArtifactStatus] = useState<ArtifactStatus>('PENDING_FOR_APPROVAL')
+    const [topics, setTopics] = useState<Topic[]>([])
     const [loading, setLoading] = useState(true)
     const [artifactLoading, setArtifactLoading] = useState(false)
     const [saving, setSaving] = useState(false)
     const [running, setRunning] = useState(false)
+    const [updatingTopic, setUpdatingTopic] = useState(false)
     const [runFromStep, setRunFromStep] = useState<number>(0)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
@@ -32,10 +36,13 @@ export default function PipelineDetailsPage() {
         if (!accessToken || !pipelineName) return
 
         setLoading(true)
-        getPipeline(accessToken, pipelineName as string)
-        .then(p => {
+        Promise.all([
+            getPipeline(accessToken, pipelineName as string),
+            fetchTopics(accessToken)
+        ])
+        .then(([p, t]) => {
             setPipeline(p)
-            // If step 1 exists, maybe select it by default or stay at 0
+            setTopics(t)
         })
         .catch(err => setError(err.message))
         .finally(() => setLoading(false))
@@ -45,7 +52,7 @@ export default function PipelineDetailsPage() {
         if (!accessToken || !pipelineName || selectedStep === null) return
 
         const stepInfo = pipeline?.steps.find(s => s.step === selectedStep)
-        if (stepInfo?.status === undefined) {
+        if (stepInfo?.status === undefined || stepInfo?.status === null) {
             setYaml('')
             return
         }
@@ -56,10 +63,29 @@ export default function PipelineDetailsPage() {
         .then(y => setYaml(y))
         .catch(err => {
             setYaml('')
-            setError(`Failed to load artifact for step ${selectedStep}: ${err.message}`)
+            // Don't show error if artifact just doesn't exist yet
+            console.error(`Failed to load artifact for step ${selectedStep}: ${err.message}`)
         })
         .finally(() => setArtifactLoading(false))
     }, [accessToken, pipelineName, selectedStep, pipeline?.steps])
+
+    const handleTopicChange = async (newTopicKey: string) => {
+        if (!accessToken || !pipelineName || !pipeline) return
+        
+        setUpdatingTopic(true)
+        setError(null)
+        setSuccess(null)
+        
+        try {
+            const updated = await updatePipelineMetadata(accessToken, pipelineName as string, newTopicKey)
+            setPipeline(updated)
+            setSuccess(`Topic updated to ${newTopicKey} successfully!`)
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setUpdatingTopic(false)
+        }
+    }
 
     const handleSave = async () => {
         if (!accessToken || !pipelineName || selectedStep === null) return
@@ -155,6 +181,20 @@ export default function PipelineDetailsPage() {
                 </div>
                 <div className="text-right flex items-center gap-6">
                     <div className="flex flex-col items-end">
+                        <div className="text-sm font-semibold text-gray-700 mb-1">Topic</div>
+                         <select
+                            value={pipeline?.topicKey || ''}
+                            onChange={(e) => handleTopicChange(e.target.value)}
+                            disabled={updatingTopic || loading}
+                            className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        >
+                            {topics.map(t => (
+                                <option key={t.key} value={t.key}>{t.name} ({t.key})</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col items-end border-l pl-6 border-gray-200">
                         <div className="text-sm font-semibold text-gray-700 mb-1">Pipeline Status</div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                             pipeline?.status.includes('PENDING') ? "bg-yellow-100 text-yellow-800" :

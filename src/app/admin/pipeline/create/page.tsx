@@ -1,8 +1,10 @@
 'use client'
 
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import {useAuth} from "@/auth/useAuth";
 import {createPipeline} from "@/features/pipeline/pipeline.api";
+import {fetchTopics} from "@/features/topics/topic.api";
+import {Topic} from "@/features/topics/topic.types";
 import {useRouter} from "next/navigation";
 
 export default function CreatePipelinePage() {
@@ -10,8 +12,17 @@ export default function CreatePipelinePage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState('')
+    const [topicKey, setTopicKey] = useState('')
+    const [topics, setTopics] = useState<Topic[]>([])
     const [error, setError] = useState<string | null>(null)
     const [pipelineKey, setPipelineKey] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!accessToken) return
+        fetchTopics(accessToken)
+            .then(setTopics)
+            .catch(err => setError("Failed to load topics: " + err.message))
+    }, [accessToken])
 
     function submit() {
         if (!accessToken) return
@@ -25,10 +36,14 @@ export default function CreatePipelinePage() {
             setError("Pipeline name can only contain alphanumeric characters and '-'")
             return
         }
+        if (!topicKey) {
+            setError("Please choose a topic")
+            return
+        }
 
         setLoading(true)
         setError(null)
-        createPipeline(accessToken, normalized)
+        createPipeline(accessToken, normalized, topicKey)
             .then(pipeline => {
                 setPipelineKey(pipeline.pipelineName)
                 router.push('/admin/pipeline')
@@ -47,21 +62,42 @@ export default function CreatePipelinePage() {
                 </div>
             )}
 
-            <div className="max-w-md">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Pipeline Name
-                </label>
-                <input
-                    type="text"
-                    className="w-full border p-2 bg-gray-800 text-white rounded"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="e.g. java-core-interview-v1"
-                    disabled={loading}
-                />
-                <p className="mt-2 text-xs text-gray-400">
-                    Whitespaces will be replaced with "-", only alphanumeric and "-" symbols are allowed. The name will be lower-cased.
-                </p>
+            <div className="max-w-md space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Pipeline Name
+                    </label>
+                    <input
+                        type="text"
+                        className="w-full border p-2 bg-gray-800 text-white rounded"
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        placeholder="e.g. java-core-interview-v1"
+                        disabled={loading}
+                    />
+                    <p className="mt-2 text-xs text-gray-400">
+                        Whitespaces will be replaced with "-", only alphanumeric and "-" symbols are allowed. The name will be lower-cased.
+                    </p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Topic
+                    </label>
+                    <select
+                        className="w-full border p-2 bg-gray-800 text-white rounded"
+                        value={topicKey}
+                        onChange={e => setTopicKey(e.target.value)}
+                        disabled={loading}
+                    >
+                        <option value="">Select a topic...</option>
+                        {topics.map(topic => (
+                            <option key={topic.key} value={topic.key}>
+                                {topic.name} ({topic.key})
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
                 <div className="mt-6 flex items-center gap-4">
                     <button
