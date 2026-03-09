@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react'
 import {useAuth} from "@/auth/useAuth"
-import {getVersions, exportToVersion, importFromVersion} from "@/features/sync/sync.api"
+import {getVersions, exportToVersion, importFromVersion, deleteVersion} from "@/features/sync/sync.api"
 
 export default function SyncPage() {
     const {accessToken} = useAuth()
@@ -55,6 +55,25 @@ export default function SyncPage() {
         try {
             await importFromVersion(accessToken, selectedImportVersion)
             setSuccess(`Successfully imported from version ${selectedImportVersion}`)
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!accessToken || !selectedImportVersion) return
+        if (!confirm(`Are you sure you want to delete version "${selectedImportVersion}" from BOTH local and remote repositories? This cannot be undone.`)) return
+
+        setLoading(true)
+        setError(null)
+        setSuccess(null)
+        try {
+            await deleteVersion(accessToken, selectedImportVersion)
+            setSuccess(`Successfully deleted version ${selectedImportVersion}`)
+            setSelectedImportVersion('')
+            fetchVersions()
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -130,6 +149,13 @@ export default function SyncPage() {
                             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors disabled:opacity-50"
                         >
                             {loading ? 'Processing...' : 'Import to Database'}
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            disabled={loading || !selectedImportVersion}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors disabled:opacity-50"
+                        >
+                            {loading ? 'Processing...' : 'Delete from Git'}
                         </button>
                         <button
                             onClick={fetchVersions}

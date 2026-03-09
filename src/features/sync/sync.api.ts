@@ -38,3 +38,16 @@ export async function importFromVersion(accessToken: string, version: String): P
         throw new Error(errorData?.message || 'Failed to import from version.')
     }
 }
+
+export async function deleteVersion(accessToken: string, version: string): Promise<void> {
+    const response = await fetch(`${QUESTION_API}/admin/sync/versions/${version}`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'DELETE',
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || 'Failed to delete version.')
+    }
+}
