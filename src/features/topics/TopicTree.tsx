@@ -101,7 +101,7 @@ export function TopicTree({
 
             <button
                 onClick={() => setAction({ type: 'create', parentPath: null })}
-                className="mt-4 w-full py-2 px-4 border border-dashed border-gray-700 rounded-md text-gray-300 hover:bg-gray-800 hover:border-gray-600 text-sm font-medium transition-colors"
+                className="mt-4 w-full py-2 px-4 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm font-medium transition-colors"
             >
                 + Add Topic
             </button>
