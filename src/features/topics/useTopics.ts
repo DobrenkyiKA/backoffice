@@ -49,5 +49,13 @@ export function useTopics() {
         setTopics(prev => prev.filter(t => t.key !== key))
     }
 
-    return {topics, loading, error, createTopic, updateTopic, deleteTopic, refresh}
+    const moveTopic = async (key: string, newParentPath: string | null) => {
+        if (!accessToken) return
+        const updatedTopic = await api.moveTopic(accessToken, key, newParentPath)
+        // Refresh everything because paths of children also changed
+        refresh()
+        return updatedTopic
+    }
+
+    return {topics, loading, error, createTopic, updateTopic, deleteTopic, moveTopic, refresh}
 }

@@ -10,6 +10,7 @@ type Props = {
     onToggleExpand: (path: string) => void
     onToggleSelect: (key: string) => void
     onAction: (action: { type: 'create'; parentPath: string | null } | { type: 'edit'; topic: Topic } | { type: 'delete'; topic: Topic }) => void
+    onMove: (key: string, newParentPath: string | null) => void
 }
 
 export function TopicNodeItem({
@@ -20,6 +21,7 @@ export function TopicNodeItem({
                                   onToggleExpand,
                                   onToggleSelect,
                                   onAction,
+                                  onMove,
                               }: Props) {
     const { topic, children } = node
     const isExpanded = expandedPaths.has(topic.path)
@@ -27,19 +29,54 @@ export function TopicNodeItem({
     const hasChildren = children.length > 0
 
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+    const [isDragOver, setIsDragOver] = useState(false)
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault()
         setContextMenu({ x: e.clientX, y: e.clientY })
     }
 
+    const handleDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData('topicKey', topic.key)
+        e.dataTransfer.effectAllowed = 'move'
+        // Stop propagation so parent nodes don't also start dragging
+        e.stopPropagation()
+    }
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        setIsDragOver(true)
+        e.stopPropagation()
+    }
+
+    const handleDragLeave = () => {
+        setIsDragOver(false)
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsDragOver(false)
+        const draggedKey = e.dataTransfer.getData('topicKey')
+        if (draggedKey && draggedKey !== topic.key) {
+            onMove(draggedKey, topic.path)
+        }
+        e.stopPropagation()
+    }
+
     return (
         <div>
             <div
                 onContextMenu={handleContextMenu}
+                draggable
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
                 className={`
           flex items-center gap-1 py-1 cursor-pointer
           ${isSelected ? 'bg-blue-600 text-white' : 'hover:bg-blue-500'}
+          ${isDragOver ? 'bg-blue-700 ring-2 ring-blue-400 ring-inset' : ''}
         `}
                 style={{ paddingLeft: level * 16 }}
             >
@@ -91,6 +128,7 @@ export function TopicNodeItem({
                         onToggleExpand={onToggleExpand}
                         onToggleSelect={onToggleSelect}
                         onAction={onAction}
+                        onMove={onMove}
                     />
                 ))}
         </div>

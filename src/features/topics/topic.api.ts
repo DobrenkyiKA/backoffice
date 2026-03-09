@@ -47,7 +47,7 @@ export async function updateTopic(
     newKey: string,
     name: string
 ): Promise<Topic> {
-    const response = await fetch(`${QUESTION_API}/admin/topics/${oldKey}`, {
+    const response = await fetch(`${QUESTION_API}/admin/topics/${encodeURIComponent(oldKey)}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -64,11 +64,32 @@ export async function updateTopic(
     return response.json()
 }
 
+export async function moveTopic(
+    accessToken: string,
+    key: string,
+    newParentPath: string | null
+): Promise<Topic> {
+    const query = newParentPath ? `?parentPath=${encodeURIComponent(newParentPath)}` : ''
+    const response = await fetch(`${QUESTION_API}/admin/topics/${encodeURIComponent(key)}/move${query}`, {
+        method: 'PATCH',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    })
+
+    if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to move topic')
+    }
+
+    return response.json()
+}
+
 export async function deleteTopic(
     accessToken: string,
     key: string
 ): Promise<void> {
-    const response = await fetch(`${QUESTION_API}/admin/topics/${key}`, {
+    const response = await fetch(`${QUESTION_API}/admin/topics/${encodeURIComponent(key)}`, {
         method: 'DELETE',
         headers: {
             Authorization: `Bearer ${accessToken}`,

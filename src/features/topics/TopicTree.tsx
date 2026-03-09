@@ -20,7 +20,7 @@ export function TopicTree({
                               selectedTopicKeys,
                               onToggleTopic,
                           }: Props) {
-    const {topics, loading, error, createTopic, updateTopic, deleteTopic} = useTopics()
+    const {topics, loading, error, createTopic, updateTopic, deleteTopic, moveTopic} = useTopics()
     const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
     const [action, setAction] = useState<Action | null>(null)
     const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -57,12 +57,33 @@ export function TopicTree({
         }
     }
 
+    const handleMove = async (key: string, newParentPath: string | null) => {
+        try {
+            await moveTopic(key, newParentPath)
+        } catch (err: any) {
+            alert(err.message)
+        }
+    }
+
     if (loading) return <div>Loading topics…</div>
     if (error) return <div className="text-red-600">{error}</div>
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-auto">
+            <div
+                className="flex-1 overflow-auto"
+                onDragOver={e => {
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                }}
+                onDrop={e => {
+                    e.preventDefault()
+                    const draggedKey = e.dataTransfer.getData('topicKey')
+                    if (draggedKey) {
+                        handleMove(draggedKey, null)
+                    }
+                }}
+            >
                 {tree.map(node => (
                     <TopicNodeItem
                         key={node.topic.key}
@@ -73,6 +94,7 @@ export function TopicTree({
                         onToggleExpand={toggleExpand}
                         onToggleSelect={onToggleTopic}
                         onAction={setAction}
+                        onMove={handleMove}
                     />
                 ))}
             </div>
