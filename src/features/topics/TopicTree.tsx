@@ -35,12 +35,12 @@ export function TopicTree({
         })
     }
 
-    const handleSave = async (key: string, name: string, description?: string) => {
+    const handleSave = async (key: string, name: string, coverageArea: string, exclusions: string) => {
         if (!action) return
         if (action.type === 'create') {
-            await createTopic(key, name, action.parentPath, description)
+            await createTopic(key, name, action.parentPath, coverageArea, exclusions)
         } else if (action.type === 'edit') {
-            await updateTopic(action.topic.key, key, name, description)
+            await updateTopic(action.topic.key, key, name, coverageArea, exclusions)
         }
         setAction(null)
     }
@@ -114,7 +114,8 @@ export function TopicTree({
                     <TopicForm
                         initialKey={action.type === 'edit' ? action.topic.key : ''}
                         initialName={action.type === 'edit' ? action.topic.name : ''}
-                        initialDescription={action.type === 'edit' ? action.topic.description : ''}
+                        initialCoverageArea={action.type === 'edit' ? action.topic.coverageArea : ''}
+                        initialExclusions={action.type === 'edit' ? action.topic.exclusions : ''}
                         parentPath={action.type === 'create' ? action.parentPath : null}
                         onSave={handleSave}
                         onCancel={() => setAction(null)}

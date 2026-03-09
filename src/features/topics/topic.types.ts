@@ -2,7 +2,8 @@ export type Topic = {
     key: string
     name: string
     path: string
-    description?: string
+    coverageArea: string
+    exclusions: string
 }
 
 export type TopicNode = {

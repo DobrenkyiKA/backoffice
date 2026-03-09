@@ -3,9 +3,10 @@ import {useState} from 'react'
 type Props = {
     initialKey?: string
     initialName?: string
-    initialDescription?: string
+    initialCoverageArea?: string
+    initialExclusions?: string
     parentPath?: string | null
-    onSave: (key: string, name: string, description?: string) => Promise<void>
+    onSave: (key: string, name: string, coverageArea: string, exclusions: string) => Promise<void>
     onCancel: () => void
     isEdit?: boolean
 }
@@ -13,7 +14,8 @@ type Props = {
 export function TopicForm({
                                initialKey = '',
                                initialName = '',
-                               initialDescription = '',
+                               initialCoverageArea = '',
+                               initialExclusions = '',
                                parentPath = null,
                                onSave,
                                onCancel,
@@ -21,7 +23,8 @@ export function TopicForm({
                            }: Props) {
     const [key, setKey] = useState(initialKey.toLowerCase().replace(/\s+/g, '-'))
     const [name, setName] = useState(initialName)
-    const [description, setDescription] = useState(initialDescription)
+    const [coverageArea, setCoverageArea] = useState(initialCoverageArea)
+    const [exclusions, setExclusions] = useState(initialExclusions)
     const [isKeyLocked, setIsKeyLocked] = useState(true)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -40,7 +43,7 @@ export function TopicForm({
         setLoading(true)
         setError(null)
         try {
-            await onSave(key, name, description)
+            await onSave(key, name, coverageArea, exclusions)
         } catch (err: any) {
             setError(err.message)
             setLoading(false)
@@ -98,12 +101,22 @@ export function TopicForm({
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-300">Description (optional)</label>
+                <label className="block text-sm font-medium text-gray-300">Coverage Area</label>
                 <textarea
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
+                    value={coverageArea}
+                    onChange={e => setCoverageArea(e.target.value)}
                     className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white h-24"
-                    placeholder="Describe the topic..."
+                    placeholder="Describe the coverage area..."
+                />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-300">Exclusions</label>
+                <textarea
+                    value={exclusions}
+                    onChange={e => setExclusions(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white h-24"
+                    placeholder="Describe the exclusions..."
                 />
             </div>
 

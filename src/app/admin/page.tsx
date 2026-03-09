@@ -39,11 +39,20 @@ export default function AdminHomePage() {
             <section className="flex-1 p-4">
                 <QuestionFilters filters={filters} onChange={setFilters}/>
 
-                {selectedTopic?.description && (
+                {selectedTopic?.coverageArea && (
                     <div className="mb-6 p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
+                        <p className="text-sm text-gray-400 font-medium mb-1 uppercase tracking-wider text-xs">Coverage Area</p>
                         <p className="text-sm text-gray-300 leading-relaxed italic">
-                            {selectedTopic.description}
+                            {selectedTopic.coverageArea}
                         </p>
+                        {selectedTopic.exclusions && (
+                            <div className="mt-3 pt-3 border-t border-gray-700/50">
+                                <p className="text-sm text-gray-400 font-medium mb-1 uppercase tracking-wider text-xs">Exclusions</p>
+                                <p className="text-sm text-gray-300 leading-relaxed italic">
+                                    {selectedTopic.exclusions}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
 
