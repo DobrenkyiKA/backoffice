@@ -2,7 +2,10 @@ export type ArtifactStatus = 'PENDING_FOR_APPROVAL' | 'APPROVED' | 'TO_BE_REGENE
 
 export type PipelineStep = {
     step: number
+    type: string
     status: ArtifactStatus | null
+    systemPrompt: string
+    userPrompt: string
 }
 
 export type Pipeline = {

@@ -3,15 +3,15 @@
 import {useEffect, useState} from 'react'
 import {useParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishStep0Artifact} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline} from "@/features/pipeline/pipeline.types";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
 import Link from 'next/link';
 
 const STEPS = [
-    { id: 0, label: 'Step 0: Topics' },
-    { id: 1, label: 'Step 1: Questions' },
+    { id: 0, label: 'Topics' },
+    { id: 1, label: 'Questions' },
 ]
 
 export default function PipelineDetailsPage() {
@@ -194,7 +194,7 @@ export default function PipelineDetailsPage() {
         }
     }
 
-    const handlePublishStep0 = async () => {
+    const handlePublishTopics = async () => {
         if (!accessToken || !pipelineName) return
         
         setPublishing(true)
@@ -202,9 +202,9 @@ export default function PipelineDetailsPage() {
         setSuccess(null)
         
         try {
-            const updated = await publishStep0Artifact(accessToken, pipelineName as string)
+            const updated = await publishTopicsArtifact(accessToken, pipelineName as string)
             setPipeline(updated)
-            setSuccess(`Step 0 (Topics) artifact published successfully!`)
+            setSuccess(`Topics artifact published successfully!`)
         } catch (err: unknown) {
             setError((err as Error).message)
         } finally {
@@ -226,7 +226,7 @@ export default function PipelineDetailsPage() {
 
     const stepsToDisplay = pipeline?.steps.map(s => ({
         id: s.step,
-        label: `Step ${s.step}: ${s.type === 'TOPICS_GENERATION' ? 'Topics' : s.type === 'QUESTIONS_GENERATION' ? 'Questions' : s.type}`
+        label: `${s.type === 'TOPICS_GENERATION' ? 'Topics' : s.type === 'QUESTIONS_GENERATION' ? 'Questions' : s.type}`
     })) || STEPS
 
     if (loading) return <div className="p-6 text-gray-600">Loading pipeline details...</div>
@@ -415,9 +415,9 @@ export default function PipelineDetailsPage() {
                             {saving ? 'Saving...' : 'Save Artifact'}
                         </button>
 
-                        {selectedStep === 0 && (
+                        {pipeline?.steps.find(s => s.step === selectedStep)?.type === 'TOPICS_GENERATION' && (
                             <button
-                                onClick={handlePublishStep0}
+                                onClick={handlePublishTopics}
                                 disabled={publishing || artifactLoading || running || artifactStatus !== 'APPROVED'}
                                 title={artifactStatus !== 'APPROVED' ? "Only approved artifact can be published" : ""}
                                 className={`px-5 py-2 bg-purple-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-purple-700 transition-all ${
