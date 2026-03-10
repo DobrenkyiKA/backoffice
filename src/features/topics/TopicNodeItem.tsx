@@ -73,6 +73,7 @@ export function TopicNodeItem({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
+                onClick={() => hasChildren && onToggleExpand(topic.path)}
                 className={`
           flex items-center gap-1 py-1 cursor-pointer
           ${isSelected ? 'bg-blue-600 text-white' : 'hover:bg-blue-500'}
@@ -82,13 +83,7 @@ export function TopicNodeItem({
             >
                 {/* Expand / collapse arrow */}
                 {hasChildren ? (
-                    <span
-                        onClick={e => {
-                            e.stopPropagation()
-                            onToggleExpand(topic.path)
-                        }}
-                        className="w-4 inline-flex justify-center"
-                    >
+                    <span className="w-4 inline-flex justify-center">
             {isExpanded ? '▼' : '▶'}
           </span>
                 ) : (
@@ -98,7 +93,10 @@ export function TopicNodeItem({
                 {/* Topic label */}
                 <span
                     className="text-sm truncate flex-1"
-                    onClick={() => onToggleSelect(topic.key)}
+                    onClick={e => {
+                        e.stopPropagation()
+                        onToggleSelect(topic.key)
+                    }}
                 >
           {topic.name}
         </span>
