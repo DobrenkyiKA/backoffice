@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { fetchQuestions } from './question.api'
 import { QuestionRow } from './QuestionRow'
 import { useAuth } from '@/auth/useAuth'
-import {QuestionResponse} from "@/features/questions/question.types";
+import {Page, QuestionResponse} from "@/features/questions/question.types";
 import { Filters } from './QuestionFilters'
 
 type Props = {
@@ -12,10 +12,17 @@ type Props = {
     filters: Filters
 }
 
+const PAGE_SIZE = 10
+
 export function QuestionsList({ topicKeys, filters }: Props) {
     const { accessToken } = useAuth()
-    const [questions, setQuestions] = useState<QuestionResponse[]>([])
+    const [page, setPage] = useState<Page<QuestionResponse> | null>(null)
+    const [currentPage, setCurrentPage] = useState(0)
     const [expandedId, setExpandedId] = useState<string | null>(null)
+
+    useEffect(() => {
+        setCurrentPage(0)
+    }, [topicKeys, filters])
 
     useEffect(() => {
         if (!accessToken) return
@@ -26,23 +33,101 @@ export function QuestionsList({ topicKeys, filters }: Props) {
                 difficulties: filters.difficulties,
                 formats: filters.formats,
                 labels: filters.labels,
+                searchTerm: filters.searchTerm,
+                searchInAnswers: filters.searchInAnswers,
+                page: currentPage,
+                size: PAGE_SIZE,
             },
             accessToken
-        ).then(setQuestions)
-    }, [topicKeys, filters, accessToken])
+        ).then(setPage)
+    }, [topicKeys, filters, accessToken, currentPage])
+
+    if (!page) return null
 
     return (
-        <div>
-            {questions.map(q => (
-                <QuestionRow
-                    key={q.key}
-                    question={q}
-                    expanded={expandedId === q.key}
-                    onToggle={() =>
-                        setExpandedId(prev => (prev === q.key ? null : q.key))
-                    }
-                />
-            ))}
+        <div className="space-y-4">
+            <div className="divide-y divide-gray-200">
+                {page.content.map(q => (
+                    <QuestionRow
+                        key={q.key}
+                        question={q}
+                        expanded={expandedId === q.key}
+                        onToggle={() =>
+                            setExpandedId(prev => (prev === q.key ? null : q.key))
+                        }
+                    />
+                ))}
+            </div>
+
+            {page.totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                    <div className="flex flex-1 justify-between sm:hidden">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                            disabled={currentPage === 0}
+                            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(page.totalPages - 1, prev + 1))}
+                            disabled={currentPage === page.totalPages - 1}
+                            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-sm text-gray-700">
+                                Showing <span className="font-medium">{currentPage * page.size + 1}</span> to{' '}
+                                <span className="font-medium">
+                                    {Math.min((currentPage + 1) * page.size, page.totalElements)}
+                                </span>{' '}
+                                of <span className="font-medium">{page.totalElements}</span> results
+                            </p>
+                        </div>
+                        <div>
+                            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                                    disabled={currentPage === 0}
+                                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                                >
+                                    <span className="sr-only">Previous</span>
+                                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01.02 1.06L8.832 10l3.978 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                                {[...Array(page.totalPages)].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setCurrentPage(i)}
+                                        aria-current={currentPage === i ? 'page' : undefined}
+                                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                            currentPage === i
+                                                ? 'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+                                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(page.totalPages - 1, prev + 1))}
+                                    disabled={currentPage === page.totalPages - 1}
+                                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                                >
+                                    <span className="sr-only">Next</span>
+                                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01-.02-1.06L11.168 10 7.19 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

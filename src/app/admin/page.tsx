@@ -13,6 +13,8 @@ export default function AdminHomePage() {
         difficulties: [],
         formats: [],
         labels: [],
+        searchTerm: '',
+        searchInAnswers: false,
     })
 
     function toggleTopic(key: string) {

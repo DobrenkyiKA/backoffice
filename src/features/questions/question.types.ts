@@ -19,6 +19,14 @@ export type QuestionResponse = {
     }
 }
 
+export type Page<T> = {
+    content: T[]
+    totalPages: number
+    totalElements: number
+    size: number
+    number: number
+}
+
 export type QuizAnswerResponse = {
     text: string
     correct: boolean
