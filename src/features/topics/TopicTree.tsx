@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import {buildTopicTree} from './topic.tree.utils'
 import {TopicNodeItem} from './TopicNodeItem'
 import {useTopics} from './useTopics'
@@ -24,8 +24,67 @@ export function TopicTree({
     const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
     const [action, setAction] = useState<Action | null>(null)
     const [deleteError, setDeleteError] = useState<string | null>(null)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [searchInDescription, setSearchInDescription] = useState(false)
 
-    const tree = useMemo(() => buildTopicTree(topics), [topics])
+    const filteredTopics = useMemo(() => {
+        const trimmedTerm = searchTerm.trim()
+        if (!trimmedTerm) return topics
+
+        const term = trimmedTerm.toLowerCase()
+        const matches = topics.filter(t => {
+            const nameMatch = t.name.toLowerCase().includes(term)
+            if (!searchInDescription) return nameMatch
+
+            const descMatch =
+                (t.coverageArea || '').toLowerCase().includes(term) ||
+                (t.exclusions || '').toLowerCase().includes(term)
+            return nameMatch || descMatch
+        })
+
+        if (matches.length === 0) return []
+
+        const resultPaths = new Set<string>()
+        matches.forEach(topic => {
+            const parts = topic.path.split('/')
+            for (let i = 1; i <= parts.length; i++) {
+                resultPaths.add(parts.slice(0, i).join('/'))
+            }
+        })
+
+        return topics.filter(t => resultPaths.has(t.path))
+    }, [topics, searchTerm, searchInDescription])
+
+    const tree = useMemo(() => buildTopicTree(filteredTopics), [filteredTopics])
+
+    // Auto-expand paths during search
+    useEffect(() => {
+        const trimmedTerm = searchTerm.trim()
+        if (trimmedTerm) {
+            const term = trimmedTerm.toLowerCase()
+            const matchingPaths = topics.filter(t => {
+                const nameMatch = t.name.toLowerCase().includes(term)
+                if (!searchInDescription) return nameMatch
+                const descMatch =
+                    (t.coverageArea || '').toLowerCase().includes(term) ||
+                    (t.exclusions || '').toLowerCase().includes(term)
+                return nameMatch || descMatch
+            }).map(t => t.path)
+
+            const pathsToExpand = new Set<string>()
+            matchingPaths.forEach(path => {
+                const parts = path.split('/')
+                for (let i = 1; i < parts.length; i++) {
+                    pathsToExpand.add(parts.slice(0, i).join('/'))
+                }
+            })
+            setExpandedPaths(prev => {
+                const next = new Set(prev)
+                pathsToExpand.forEach(p => next.add(p))
+                return next
+            })
+        }
+    }, [searchTerm, searchInDescription, topics])
 
     function toggleExpand(path: string) {
         setExpandedPaths(prev => {
@@ -70,6 +129,43 @@ export function TopicTree({
 
     return (
         <div className="flex flex-col h-full">
+            {/* Search Section */}
+            <div className="mb-4 p-2 bg-gray-900/50 border border-gray-700 rounded-lg space-y-2">
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="Search topics..."
+                        className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder:text-gray-500"
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-2 top-1.5 text-gray-400 hover:text-gray-200"
+                        >
+                            ✕
+                        </button>
+                    )}
+                </div>
+                <div className="flex items-center justify-between px-1">
+                    <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Search Type</span>
+                    <button
+                        onClick={() => setSearchInDescription(!searchInDescription)}
+                        className={`flex items-center gap-2 px-2 py-1 rounded text-[11px] transition-colors border ${
+                            searchInDescription
+                                ? 'bg-green-500/10 border-green-500/50 text-green-400'
+                                : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                        }`}
+                    >
+                        {searchInDescription ? 'Name + Desc' : 'Name Only'}
+                        <div className={`w-3 h-3 rounded-full border border-current flex items-center justify-center`}>
+                            {searchInDescription && <div className="w-1.5 h-1.5 rounded-full bg-current"/>}
+                        </div>
+                    </button>
+                </div>
+            </div>
+
             <div
                 className="flex-1 overflow-auto"
                 onDragOver={e => {
