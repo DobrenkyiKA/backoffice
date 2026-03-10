@@ -51,3 +51,16 @@ export async function deleteVersion(accessToken: string, version: string): Promi
         throw new Error(errorData?.message || 'Failed to delete version.')
     }
 }
+
+export async function getLastCommitMessage(accessToken: string, version: string): Promise<string> {
+    const response = await fetch(`${QUESTION_API}/admin/sync/versions/${version}/last-commit-message`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'GET',
+    })
+    if (!response.ok) {
+        throw new Error('Failed to fetch last commit message.')
+    }
+    return response.text()
+}

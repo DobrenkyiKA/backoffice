@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react'
 import {useAuth} from "@/auth/useAuth"
-import {getVersions, exportToVersion, importFromVersion, deleteVersion} from "@/features/sync/sync.api"
+import {getVersions, exportToVersion, importFromVersion, deleteVersion, getLastCommitMessage} from "@/features/sync/sync.api"
 
 export default function SyncPage() {
     const {accessToken} = useAuth()
@@ -13,6 +13,7 @@ export default function SyncPage() {
 
     const [exportVersion, setExportVersion] = useState('')
     const [exportMessage, setExportMessage] = useState('')
+    const [isExistingVersion, setIsExistingVersion] = useState(false)
     const [selectedImportVersion, setSelectedImportVersion] = useState('')
 
     const fetchVersions = () => {
@@ -26,6 +27,17 @@ export default function SyncPage() {
         fetchVersions()
     }, [accessToken])
 
+    useEffect(() => {
+        if (isExistingVersion && exportVersion && accessToken) {
+            getLastCommitMessage(accessToken, exportVersion)
+                .then(setExportMessage)
+                .catch(err => {
+                    console.error("Failed to fetch commit message:", err);
+                    setExportMessage('');
+                })
+        }
+    }, [isExistingVersion, exportVersion, accessToken])
+
     const handleExport = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!accessToken || !exportVersion || !exportMessage) return
@@ -37,6 +49,7 @@ export default function SyncPage() {
             setSuccess(`Successfully exported to version ${exportVersion}`)
             setExportVersion('')
             setExportMessage('')
+            setIsExistingVersion(false)
             fetchVersions()
         } catch (err: any) {
             setError(err.message)
@@ -94,16 +107,58 @@ export default function SyncPage() {
                     <h2 className="text-xl font-semibold mb-4">Export to Git</h2>
                     <p className="text-gray-400 text-sm mb-6">Backup the current database state to a new version in the Git repository.</p>
                     <form onSubmit={handleExport} className="space-y-4">
+                        <div className="flex items-center space-x-4 mb-2">
+                            <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                                <input
+                                    type="radio"
+                                    checked={!isExistingVersion}
+                                    onChange={() => {
+                                        setIsExistingVersion(false)
+                                        setExportVersion('')
+                                        setExportMessage('')
+                                    }}
+                                    className="form-radio"
+                                />
+                                <span>New Version</span>
+                            </label>
+                            <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                                <input
+                                    type="radio"
+                                    checked={isExistingVersion}
+                                    onChange={() => {
+                                        setIsExistingVersion(true)
+                                        setExportVersion('')
+                                        setExportMessage('')
+                                    }}
+                                    className="form-radio"
+                                />
+                                <span>Existing Version</span>
+                            </label>
+                        </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Version Name</label>
-                            <input
-                                type="text"
-                                value={exportVersion}
-                                onChange={e => setExportVersion(e.target.value)}
-                                className="w-full bg-gray-700 border border-gray-600 rounded p-2"
-                                placeholder="e.g. v1.1"
-                                required
-                            />
+                            {isExistingVersion ? (
+                                <select
+                                    value={exportVersion}
+                                    onChange={e => setExportVersion(e.target.value)}
+                                    className="w-full bg-gray-700 border border-gray-600 rounded p-2"
+                                    required
+                                >
+                                    <option value="">-- Select version to overwrite --</option>
+                                    {versions.map(v => (
+                                        <option key={v} value={v}>{v}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    type="text"
+                                    value={exportVersion}
+                                    onChange={e => setExportVersion(e.target.value)}
+                                    className="w-full bg-gray-700 border border-gray-600 rounded p-2"
+                                    placeholder="e.g. v1.1"
+                                    required
+                                />
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Commit Message</label>
