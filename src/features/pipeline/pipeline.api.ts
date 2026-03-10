@@ -5,7 +5,8 @@ const AI_API = process.env.NEXT_PUBLIC_AI_API_URL
 export async function createPipeline(
     accessToken: string,
     name: string,
-    topicKey: string
+    topicKey: string,
+    steps: { type: string, systemPrompt: string, userPrompt: string }[] = []
 ) : Promise<Pipeline> {
 
     const response =
@@ -15,7 +16,7 @@ export async function createPipeline(
                 'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({ name, topicKey }),
+            body: JSON.stringify({ name, topicKey, steps }),
         })
     if (!response.ok) {
         const errorData = await response.json().catch(() => null)
@@ -28,7 +29,8 @@ export async function createPipeline(
 export async function updatePipelineMetadata(
     accessToken: string,
     pipelineName: string,
-    topicKey: string
+    topicKey?: string,
+    steps?: { type: string, systemPrompt: string, userPrompt: string }[]
 ): Promise<Pipeline> {
     const response = await fetch(`${AI_API}/pipeline/${pipelineName}`, {
         headers: {
@@ -36,7 +38,7 @@ export async function updatePipelineMetadata(
             'Content-Type': 'application/json'
         },
         method: 'PATCH',
-        body: JSON.stringify({ topicKey }),
+        body: JSON.stringify({ topicKey, steps }),
     })
     if (!response.ok) {
         const errorData = await response.json().catch(() => null)

@@ -16,6 +16,15 @@ export default function CreatePipelinePage() {
     const [topics, setTopics] = useState<Topic[]>([])
     const [error, setError] = useState<string | null>(null)
     const [pipelineKey, setPipelineKey] = useState<string | null>(null)
+    const [selectedSteps, setSelectedSteps] = useState<{type: string, systemPrompt: string, userPrompt: string}[]>([
+        { type: 'TOPICS_GENERATION', systemPrompt: '', userPrompt: '' },
+        { type: 'QUESTIONS_GENERATION', systemPrompt: '', userPrompt: '' }
+    ])
+
+    const STEP_TYPES = [
+        { type: 'TOPICS_GENERATION', label: 'Topics Generation' },
+        { type: 'QUESTIONS_GENERATION', label: 'Questions Generation' }
+    ]
 
     useEffect(() => {
         if (!accessToken) return
@@ -43,7 +52,7 @@ export default function CreatePipelinePage() {
 
         setLoading(true)
         setError(null)
-        createPipeline(accessToken, normalized, topicKey)
+        createPipeline(accessToken, normalized, topicKey, selectedSteps)
             .then(pipeline => {
                 setPipelineKey(pipeline.pipelineName)
                 router.push('/admin/pipeline')
@@ -97,6 +106,84 @@ export default function CreatePipelinePage() {
                             </option>
                         ))}
                     </select>
+                </div>
+
+                <div className="pt-4">
+                    <label className="block text-sm font-medium text-gray-300 mb-4">
+                        Pipeline Steps (Order Matters)
+                    </label>
+                    <div className="space-y-4">
+                        {selectedSteps.map((step, index) => (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-800 rounded border border-gray-700">
+                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full text-xs font-bold text-gray-400">
+                                    {index}
+                                </div>
+                                <select
+                                    className="flex-grow border p-1.5 bg-gray-900 text-white rounded text-sm"
+                                    value={step.type}
+                                    onChange={e => {
+                                        const newSteps = [...selectedSteps]
+                                        newSteps[index].type = e.target.value
+                                        setSelectedSteps(newSteps)
+                                    }}
+                                    disabled={loading}
+                                >
+                                    {STEP_TYPES.map(t => (
+                                        <option key={t.type} value={t.type}>{t.label}</option>
+                                    ))}
+                                </select>
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => {
+                                            if (index === 0) return
+                                            const newSteps = [...selectedSteps]
+                                            const temp = newSteps[index]
+                                            newSteps[index] = newSteps[index - 1]
+                                            newSteps[index - 1] = temp
+                                            setSelectedSteps(newSteps)
+                                        }}
+                                        disabled={loading || index === 0}
+                                        className="p-1.5 hover:bg-gray-700 rounded text-gray-400 disabled:opacity-30"
+                                        title="Move Up"
+                                    >
+                                        ↑
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (index === selectedSteps.length - 1) return
+                                            const newSteps = [...selectedSteps]
+                                            const temp = newSteps[index]
+                                            newSteps[index] = newSteps[index + 1]
+                                            newSteps[index + 1] = temp
+                                            setSelectedSteps(newSteps)
+                                        }}
+                                        disabled={loading || index === selectedSteps.length - 1}
+                                        className="p-1.5 hover:bg-gray-700 rounded text-gray-400 disabled:opacity-30"
+                                        title="Move Down"
+                                    >
+                                        ↓
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedSteps(selectedSteps.filter((_, i) => i !== index))
+                                        }}
+                                        disabled={loading}
+                                        className="p-1.5 hover:bg-red-900/30 text-red-400 rounded"
+                                        title="Remove Step"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <button
+                        onClick={() => setSelectedSteps([...selectedSteps, { type: 'TOPICS_GENERATION', systemPrompt: '', userPrompt: '' }])}
+                        disabled={loading}
+                        className="mt-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+                    >
+                        + Add Step
+                    </button>
                 </div>
 
                 <div className="mt-6 flex items-center gap-4">

@@ -21,6 +21,8 @@ export default function PipelineDetailsPage() {
     const [pipeline, setPipeline] = useState<Pipeline | null>(null)
     const [selectedStep, setSelectedStep] = useState<number>(0)
     const [yaml, setYaml] = useState<string>('')
+    const [systemPrompt, setSystemPrompt] = useState<string>('')
+    const [userPrompt, setUserPrompt] = useState<string>('')
     const [artifactStatus, setArtifactStatus] = useState<ArtifactStatus>('PENDING_FOR_APPROVAL')
     const [topics, setTopics] = useState<Topic[]>([])
     const [loading, setLoading] = useState(true)
@@ -70,6 +72,14 @@ export default function PipelineDetailsPage() {
         .finally(() => setArtifactLoading(false))
     }, [accessToken, pipelineName, selectedStep, pipeline?.steps])
 
+    useEffect(() => {
+        const stepInfo = pipeline?.steps.find(s => s.step === selectedStep)
+        if (stepInfo) {
+            setSystemPrompt(stepInfo.systemPrompt || '')
+            setUserPrompt(stepInfo.userPrompt || '')
+        }
+    }, [selectedStep, pipeline])
+
     const handleTopicChange = async (newTopicKey: string) => {
         if (!accessToken || !pipelineName || !pipeline) return
         
@@ -85,6 +95,34 @@ export default function PipelineDetailsPage() {
             setError((err as Error).message)
         } finally {
             setUpdatingTopic(false)
+        }
+    }
+
+    const handleSavePrompts = async () => {
+        if (!accessToken || !pipelineName || !pipeline) return
+        
+        setSaving(true)
+        setError(null)
+        setSuccess(null)
+        
+        try {
+            const updatedSteps = pipeline.steps.map(s => 
+                s.step === selectedStep 
+                    ? { ...s, systemPrompt, userPrompt } 
+                    : s
+            ).map(s => ({
+                type: s.type,
+                systemPrompt: s.systemPrompt,
+                userPrompt: s.userPrompt
+            }))
+
+            const updated = await updatePipelineMetadata(accessToken, pipelineName as string, undefined, updatedSteps)
+            setPipeline(updated)
+            setSuccess(`Prompts for step ${selectedStep} updated successfully!`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        } finally {
+            setSaving(false)
         }
     }
 
@@ -186,6 +224,11 @@ export default function PipelineDetailsPage() {
         }
     }
 
+    const stepsToDisplay = pipeline?.steps.map(s => ({
+        id: s.step,
+        label: `Step ${s.step}: ${s.type === 'TOPICS_GENERATION' ? 'Topics' : s.type === 'QUESTIONS_GENERATION' ? 'Questions' : s.type}`
+    })) || STEPS
+
     if (loading) return <div className="p-6 text-gray-600">Loading pipeline details...</div>
     if (error && !pipeline) return <div className="p-6 text-red-600">Error: {error}</div>
 
@@ -254,7 +297,7 @@ export default function PipelineDetailsPage() {
             <div className="mb-10 relative">
                 <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
                 <div className="relative z-10 flex justify-between">
-                    {STEPS.map((step, index) => {
+                    {stepsToDisplay.map((step, index) => {
                         const isSelected = selectedStep === step.id
                         const hasArtifact = pipeline?.steps.find(s => s.step === step.id)?.status !== null
                         
@@ -296,11 +339,46 @@ export default function PipelineDetailsPage() {
                 </div>
             )}
             
+            {/* Prompt Editors */}
+            <div className="grid grid-cols-2 gap-6 mb-8">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex flex-col">
+                    <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">System Prompt</span>
+                    </div>
+                    <textarea
+                        className="w-full h-48 font-mono text-xs p-4 bg-gray-50 text-gray-800 focus:outline-none focus:bg-white transition-all resize-none border-none"
+                        value={systemPrompt}
+                        onChange={(e) => setSystemPrompt(e.target.value)}
+                        placeholder="Enter system prompt template..."
+                    />
+                </div>
+                <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex flex-col">
+                    <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">User Prompt</span>
+                        <button
+                            onClick={handleSavePrompts}
+                            disabled={saving || loading}
+                            className={`px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${
+                                (saving || loading) ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                        >
+                            {saving ? 'Saving...' : 'Save Prompts'}
+                        </button>
+                    </div>
+                    <textarea
+                        className="w-full h-48 font-mono text-xs p-4 bg-gray-50 text-gray-800 focus:outline-none focus:bg-white transition-all resize-none border-none"
+                        value={userPrompt}
+                        onChange={(e) => setUserPrompt(e.target.value)}
+                        placeholder="Enter user prompt template..."
+                    />
+                </div>
+            </div>
+
             <div className="bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden">
                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                     <div>
                         <span className="text-lg font-bold text-gray-800">
-                            Artifact for {STEPS.find(s => s.id === selectedStep)?.label}
+                            Artifact for {stepsToDisplay.find(s => s.id === selectedStep)?.label}
                         </span>
                         {artifactLoading && <span className="ml-3 text-sm text-gray-500 italic">Loading...</span>}
                     </div>
