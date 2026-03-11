@@ -321,28 +321,15 @@ export default function PipelineDetailsPage() {
     if (error && !pipeline) return <div className="p-6 text-red-600">Error: {error}</div>
 
     return (
-        <div className="p-6 max-w-5xl mx-auto">
+        <div className="p-6 max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <Link href="/admin/pipeline" className="text-blue-600 hover:underline text-sm mb-2 inline-block font-medium">
                         &larr; Back to Pipelines
                     </Link>
-                    <h1 className="text-2xl font-extrabold text-gray-800">Pipeline: {pipelineName}</h1>
                 </div>
                 <div className="text-right flex items-center gap-6">
-                    <div className="flex flex-col items-end">
-                        <div className="text-sm font-semibold text-gray-700 mb-1">Topic</div>
-                         <select
-                            value={pipeline?.topicKey || ''}
-                            onChange={(e) => handleTopicChange(e.target.value)}
-                            disabled={updatingTopic || loading}
-                            className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        >
-                            {topics.map(t => (
-                                <option key={t.key} value={t.key}>{t.name} ({t.key})</option>
-                            ))}
-                        </select>
-                    </div>
+
 
                     <div className="flex flex-col items-end border-l pl-6 border-gray-200">
                         <div className="text-sm font-semibold text-gray-700 mb-1">Pipeline Status</div>
@@ -380,7 +367,25 @@ export default function PipelineDetailsPage() {
                     </div>
                 </div>
             </div>
-
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-extrabold text-white">Pipeline name: {pipelineName}</h1>
+                </div>
+            </div>
+            <div className="flex justify-between items-center mb-8">
+                <div className="text-2xl font-extrabold text-white mb-1">Start topic:
+                    <select
+                        value={pipeline?.topicKey || ''}
+                        onChange={(e) => handleTopicChange(e.target.value)}
+                        disabled={updatingTopic || loading}
+                        className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                        {topics.map(t => (
+                            <option key={t.key} value={t.key}>{t.name} ({t.key})</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
             {/* Pipeline Visual Representation */}
             <div className="mb-10 relative">
                 <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
