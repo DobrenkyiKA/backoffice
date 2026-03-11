@@ -428,7 +428,7 @@ export default function PipelineDetailsPage() {
             )}
             
             {/* Prompt Editors */}
-            <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="flex flex-col gap-6 mb-8">
                 <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex flex-col">
                     <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
                         <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">System Prompt</span>

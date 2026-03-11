@@ -3,9 +3,11 @@
 import {useEffect, useState} from 'react'
 import {useAuth} from "@/auth/useAuth"
 import {getVersions, exportToVersion, importFromVersion, deleteVersion, getLastCommitMessage} from "@/features/sync/sync.api"
+import {getPromptVersions, exportPromptsToVersion, importPromptsFromVersion, deletePromptVersion, getLastPromptCommitMessage} from "@/features/prompts/prompt-sync.api"
 
 export default function SyncPage() {
     const {accessToken} = useAuth()
+    const [syncType, setSyncType] = useState<'questions' | 'prompts'>('questions')
     const [versions, setVersions] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -18,25 +20,27 @@ export default function SyncPage() {
 
     const fetchVersions = () => {
         if (!accessToken) return
-        getVersions(accessToken)
+        const fetchFn = syncType === 'questions' ? getVersions : getPromptVersions
+        fetchFn(accessToken)
             .then(setVersions)
             .catch(err => setError(err.message))
     }
 
     useEffect(() => {
         fetchVersions()
-    }, [accessToken])
+    }, [accessToken, syncType])
 
     useEffect(() => {
         if (isExistingVersion && exportVersion && accessToken) {
-            getLastCommitMessage(accessToken, exportVersion)
+            const getMessageFn = syncType === 'questions' ? getLastCommitMessage : getLastPromptCommitMessage
+            getMessageFn(accessToken, exportVersion)
                 .then(setExportMessage)
                 .catch(err => {
                     console.error("Failed to fetch commit message:", err);
                     setExportMessage('');
                 })
         }
-    }, [isExistingVersion, exportVersion, accessToken])
+    }, [isExistingVersion, exportVersion, accessToken, syncType])
 
     const handleExport = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -45,8 +49,12 @@ export default function SyncPage() {
         setError(null)
         setSuccess(null)
         try {
-            await exportToVersion(accessToken, exportVersion, exportMessage)
-            setSuccess(`Successfully exported to version ${exportVersion}`)
+            if (syncType === 'questions') {
+                await exportToVersion(accessToken, exportVersion, exportMessage)
+            } else {
+                await exportPromptsToVersion(accessToken, exportVersion, exportMessage)
+            }
+            setSuccess(`Successfully exported ${syncType} to version ${exportVersion}`)
             setExportVersion('')
             setExportMessage('')
             setIsExistingVersion(false)
@@ -66,8 +74,12 @@ export default function SyncPage() {
         setError(null)
         setSuccess(null)
         try {
-            await importFromVersion(accessToken, selectedImportVersion)
-            setSuccess(`Successfully imported from version ${selectedImportVersion}`)
+            if (syncType === 'questions') {
+                await importFromVersion(accessToken, selectedImportVersion)
+            } else {
+                await importPromptsFromVersion(accessToken, selectedImportVersion)
+            }
+            setSuccess(`Successfully imported ${syncType} from version ${selectedImportVersion}`)
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -83,7 +95,11 @@ export default function SyncPage() {
         setError(null)
         setSuccess(null)
         try {
-            await deleteVersion(accessToken, selectedImportVersion)
+            if (syncType === 'questions') {
+                await deleteVersion(accessToken, selectedImportVersion)
+            } else {
+                await deletePromptVersion(accessToken, selectedImportVersion)
+            }
             setSuccess(`Successfully deleted version ${selectedImportVersion}`)
             setSelectedImportVersion('')
             fetchVersions()
@@ -97,6 +113,29 @@ export default function SyncPage() {
     return (
         <div className="max-w-4xl mx-auto p-6">
             <h1 className="text-2xl font-bold mb-8">Data Synchronization</h1>
+
+            <div className="flex space-x-4 mb-8">
+                <button
+                    onClick={() => setSyncType('questions')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        syncType === 'questions'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                >
+                    Questions Sync
+                </button>
+                <button
+                    onClick={() => setSyncType('prompts')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        syncType === 'prompts'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                >
+                    Prompts Sync
+                </button>
+            </div>
 
             {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
             {success && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</div>}
