@@ -3,8 +3,8 @@
 import {useEffect, useState} from 'react'
 import {useParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact} from "@/features/pipeline/pipeline.api";
-import {ArtifactStatus, Pipeline} from "@/features/pipeline/pipeline.types";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt} from "@/features/pipeline/pipeline.api";
+import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
 import Link from 'next/link';
@@ -21,8 +21,11 @@ export default function PipelineDetailsPage() {
     const [pipeline, setPipeline] = useState<Pipeline | null>(null)
     const [selectedStep, setSelectedStep] = useState<number>(0)
     const [yaml, setYaml] = useState<string>('')
+    const [allPrompts, setAllPrompts] = useState<Prompt[]>([])
     const [systemPrompt, setSystemPrompt] = useState<string>('')
+    const [systemPromptName, setSystemPromptName] = useState<string>('')
     const [userPrompt, setUserPrompt] = useState<string>('')
+    const [userPromptName, setUserPromptName] = useState<string>('')
     const [artifactStatus, setArtifactStatus] = useState<ArtifactStatus>('PENDING_FOR_APPROVAL')
     const [topics, setTopics] = useState<Topic[]>([])
     const [loading, setLoading] = useState(true)
@@ -41,11 +44,13 @@ export default function PipelineDetailsPage() {
         setLoading(true)
         Promise.all([
             getPipeline(accessToken, pipelineName as string),
-            fetchTopics(accessToken)
+            fetchTopics(accessToken),
+            getPrompts(accessToken)
         ])
-        .then(([p, t]) => {
+        .then(([p, t, pr]) => {
             setPipeline(p)
             setTopics(t)
+            setAllPrompts(pr)
         })
         .catch(err => setError(err.message))
         .finally(() => setLoading(false))
@@ -76,7 +81,9 @@ export default function PipelineDetailsPage() {
         const stepInfo = pipeline?.steps.find(s => s.step === selectedStep)
         if (stepInfo) {
             setSystemPrompt(stepInfo.systemPrompt || '')
+            setSystemPromptName(stepInfo.systemPromptName || '')
             setUserPrompt(stepInfo.userPrompt || '')
+            setUserPromptName(stepInfo.userPromptName || '')
         }
     }, [selectedStep, pipeline])
 
@@ -108,11 +115,13 @@ export default function PipelineDetailsPage() {
         try {
             const updatedSteps = pipeline.steps.map(s => 
                 s.step === selectedStep 
-                    ? { ...s, systemPrompt, userPrompt } 
+                    ? { ...s, systemPromptName, systemPrompt, userPromptName, userPrompt } 
                     : s
             ).map(s => ({
                 type: s.type,
+                systemPromptName: s.systemPromptName,
                 systemPrompt: s.systemPrompt,
+                userPromptName: s.userPromptName,
                 userPrompt: s.userPrompt
             }))
 
@@ -123,6 +132,85 @@ export default function PipelineDetailsPage() {
             setError((err as Error).message)
         } finally {
             setSaving(false)
+        }
+    }
+
+    const handleCreatePrompt = async (type: 'SYSTEM' | 'USER') => {
+        if (!accessToken) return
+        const name = prompt(`Enter new ${type} prompt name:`)
+        if (!name) return
+
+        const content = type === 'SYSTEM' ? systemPrompt : userPrompt
+        
+        setSaving(true)
+        try {
+            const newPrompt = await createPrompt(accessToken, { name, type, content })
+            setAllPrompts([...allPrompts, newPrompt])
+            if (type === 'SYSTEM') setSystemPromptName(name)
+            else setUserPromptName(name)
+            setSuccess(`Prompt '${name}' created successfully!`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleUpdateExistingPrompt = async (type: 'SYSTEM' | 'USER') => {
+        if (!accessToken) return
+        const name = type === 'SYSTEM' ? systemPromptName : userPromptName
+        if (!name) return
+
+        if (!confirm(`Are you sure you want to update the shared prompt '${name}'? This will affect all pipelines using it.`)) return
+
+        const content = type === 'SYSTEM' ? systemPrompt : userPrompt
+        
+        setSaving(true)
+        try {
+            const updated = await updatePrompt(accessToken, name, { content })
+            setAllPrompts(allPrompts.map(p => p.name === name ? updated : p))
+            setSuccess(`Prompt '${name}' updated successfully!`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleDeletePromptByName = async (name: string) => {
+        if (!accessToken || !name) return
+        if (!confirm(`Are you sure you want to delete prompt '${name}' from database?`)) return
+
+        setSaving(true)
+        try {
+            await deletePrompt(accessToken, name)
+            setAllPrompts(allPrompts.filter(p => p.name !== name))
+            if (systemPromptName === name) setSystemPromptName('')
+            if (userPromptName === name) setUserPromptName('')
+            setSuccess(`Prompt '${name}' deleted successfully!`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleSelectPrompt = (name: string, type: 'SYSTEM' | 'USER') => {
+        const found = allPrompts.find(p => p.name === name)
+        if (found) {
+            if (type === 'SYSTEM') {
+                setSystemPromptName(name)
+                setSystemPrompt(found.content)
+            } else {
+                setUserPromptName(name)
+                setUserPrompt(found.content)
+            }
+        } else if (name === "") {
+             if (type === 'SYSTEM') {
+                setSystemPromptName("")
+            } else {
+                setUserPromptName("")
+            }
         }
     }
 
@@ -275,7 +363,7 @@ export default function PipelineDetailsPage() {
                                 onChange={(e) => setRunFromStep(parseInt(e.target.value))}
                                 className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             >
-                                {STEPS.map(s => (
+                                {stepsToDisplay.map(s => (
                                     <option key={s.id} value={s.id}>From {s.label}</option>
                                 ))}
                             </select>
@@ -344,6 +432,21 @@ export default function PipelineDetailsPage() {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex flex-col">
                     <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
                         <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">System Prompt</span>
+                        <div className="flex gap-2">
+                             <select
+                                value={systemPromptName}
+                                onChange={(e) => handleSelectPrompt(e.target.value, 'SYSTEM')}
+                                className="text-[10px] border border-gray-300 rounded px-2 py-1 bg-white"
+                            >
+                                <option value="">Custom / None</option>
+                                {allPrompts.filter(p => p.type === 'SYSTEM').map(p => (
+                                    <option key={p.name} value={p.name}>{p.name}</option>
+                                ))}
+                            </select>
+                            <button onClick={() => handleUpdateExistingPrompt('SYSTEM')} disabled={!systemPromptName} className="p-1 hover:bg-gray-200 rounded" title="Update Shared Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+                            <button onClick={() => handleCreatePrompt('SYSTEM')} className="p-1 hover:bg-gray-200 rounded" title="Save as New Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg></button>
+                            <button onClick={() => handleDeletePromptByName(systemPromptName)} disabled={!systemPromptName} className="p-1 hover:bg-gray-200 rounded text-red-500" title="Delete Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                        </div>
                     </div>
                     <textarea
                         className="w-full h-48 font-mono text-xs p-4 bg-gray-50 text-gray-800 focus:outline-none focus:bg-white transition-all resize-none border-none"
@@ -355,15 +458,31 @@ export default function PipelineDetailsPage() {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex flex-col">
                     <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
                         <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">User Prompt</span>
-                        <button
-                            onClick={handleSavePrompts}
-                            disabled={saving || loading}
-                            className={`px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${
-                                (saving || loading) ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                        >
-                            {saving ? 'Saving...' : 'Save Prompts'}
-                        </button>
+                        <div className="flex gap-2">
+                             <select
+                                value={userPromptName}
+                                onChange={(e) => handleSelectPrompt(e.target.value, 'USER')}
+                                className="text-[10px] border border-gray-300 rounded px-2 py-1 bg-white"
+                            >
+                                <option value="">Custom / None</option>
+                                {allPrompts.filter(p => p.type === 'USER').map(p => (
+                                    <option key={p.name} value={p.name}>{p.name}</option>
+                                ))}
+                            </select>
+                            <button onClick={() => handleUpdateExistingPrompt('USER')} disabled={!userPromptName} className="p-1 hover:bg-gray-200 rounded" title="Update Shared Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+                            <button onClick={() => handleCreatePrompt('USER')} className="p-1 hover:bg-gray-200 rounded" title="Save as New Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg></button>
+                            <button onClick={() => handleDeletePromptByName(userPromptName)} disabled={!userPromptName} className="p-1 hover:bg-gray-200 rounded text-red-500" title="Delete Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                            <button
+                                onClick={handleSavePrompts}
+                                disabled={saving || loading}
+                                title="Update Pipeline Steps with current prompts"
+                                className={`ml-2 px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${
+                                    (saving || loading) ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            >
+                                {saving ? 'Saving...' : 'Link to Pipeline'}
+                            </button>
+                        </div>
                     </div>
                     <textarea
                         className="w-full h-48 font-mono text-xs p-4 bg-gray-50 text-gray-800 focus:outline-none focus:bg-white transition-all resize-none border-none"

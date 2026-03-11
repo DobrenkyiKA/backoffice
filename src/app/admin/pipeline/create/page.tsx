@@ -2,9 +2,10 @@
 
 import {useEffect, useState} from 'react'
 import {useAuth} from "@/auth/useAuth";
-import {createPipeline} from "@/features/pipeline/pipeline.api";
+import {createPipeline, getPrompts} from "@/features/pipeline/pipeline.api";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
+import {Prompt} from "@/features/pipeline/pipeline.types";
 import {useRouter} from "next/navigation";
 
 export default function CreatePipelinePage() {
@@ -14,9 +15,16 @@ export default function CreatePipelinePage() {
     const [name, setName] = useState('')
     const [topicKey, setTopicKey] = useState('')
     const [topics, setTopics] = useState<Topic[]>([])
+    const [prompts, setPrompts] = useState<Prompt[]>([])
     const [error, setError] = useState<string | null>(null)
     const [pipelineKey, setPipelineKey] = useState<string | null>(null)
-    const [selectedSteps, setSelectedSteps] = useState<{type: string, systemPrompt: string, userPrompt: string}[]>([
+    const [selectedSteps, setSelectedSteps] = useState<{
+        type: string, 
+        systemPromptName?: string, 
+        systemPrompt: string, 
+        userPromptName?: string, 
+        userPrompt: string
+    }[]>([
         { type: 'TOPICS_GENERATION', systemPrompt: '', userPrompt: '' },
         { type: 'QUESTIONS_GENERATION', systemPrompt: '', userPrompt: '' }
     ])
@@ -28,9 +36,15 @@ export default function CreatePipelinePage() {
 
     useEffect(() => {
         if (!accessToken) return
-        fetchTopics(accessToken)
-            .then(setTopics)
-            .catch(err => setError("Failed to load topics: " + err.message))
+        Promise.all([
+            fetchTopics(accessToken),
+            getPrompts(accessToken)
+        ])
+        .then(([t, p]) => {
+            setTopics(t)
+            setPrompts(p)
+        })
+        .catch(err => setError("Failed to load initial data: " + err.message))
     }, [accessToken])
 
     function submit() {
@@ -133,6 +147,40 @@ export default function CreatePipelinePage() {
                                     ))}
                                 </select>
                                 <div className="flex gap-1">
+                                    <select
+                                        className="text-[10px] border border-gray-600 rounded px-2 py-1 bg-gray-900 text-gray-400"
+                                        value={step.systemPromptName || ''}
+                                        onChange={(e) => {
+                                            const name = e.target.value
+                                            const newSteps = [...selectedSteps]
+                                            newSteps[index].systemPromptName = name
+                                            const found = prompts.find(p => p.name === name)
+                                            if (found) newSteps[index].systemPrompt = found.content
+                                            setSelectedSteps(newSteps)
+                                        }}
+                                    >
+                                        <option value="">System Prompt (Default)</option>
+                                        {prompts.filter(p => p.type === 'SYSTEM').map(p => (
+                                            <option key={p.name} value={p.name}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        className="text-[10px] border border-gray-600 rounded px-2 py-1 bg-gray-900 text-gray-400"
+                                        value={step.userPromptName || ''}
+                                        onChange={(e) => {
+                                            const name = e.target.value
+                                            const newSteps = [...selectedSteps]
+                                            newSteps[index].userPromptName = name
+                                            const found = prompts.find(p => p.name === name)
+                                            if (found) newSteps[index].userPrompt = found.content
+                                            setSelectedSteps(newSteps)
+                                        }}
+                                    >
+                                        <option value="">User Prompt (Default)</option>
+                                        {prompts.filter(p => p.type === 'USER').map(p => (
+                                            <option key={p.name} value={p.name}>{p.name}</option>
+                                        ))}
+                                    </select>
                                     <button
                                         onClick={() => {
                                             if (index === 0) return
