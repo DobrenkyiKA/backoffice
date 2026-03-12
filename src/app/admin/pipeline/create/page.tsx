@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react'
 import {useAuth} from "@/auth/useAuth";
-import {createPipeline, getPrompts} from "@/features/pipeline/pipeline.api";
+import {createPipeline, getPrompts, getStepTypes} from "@/features/pipeline/pipeline.api";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
 import {Prompt} from "@/features/pipeline/pipeline.types";
@@ -16,6 +16,7 @@ export default function CreatePipelinePage() {
     const [topicKey, setTopicKey] = useState('')
     const [topics, setTopics] = useState<Topic[]>([])
     const [prompts, setPrompts] = useState<Prompt[]>([])
+    const [stepTypes, setStepTypes] = useState<{type: string, label: string}[]>([])
     const [error, setError] = useState<string | null>(null)
     const [pipelineKey, setPipelineKey] = useState<string | null>(null)
     const [selectedSteps, setSelectedSteps] = useState<{
@@ -29,20 +30,17 @@ export default function CreatePipelinePage() {
         { type: 'QUESTIONS_GENERATION', systemPrompt: '', userPrompt: '' }
     ])
 
-    const STEP_TYPES = [
-        { type: 'TOPICS_GENERATION', label: 'Topics Generation' },
-        { type: 'QUESTIONS_GENERATION', label: 'Questions Generation' }
-    ]
-
     useEffect(() => {
         if (!accessToken) return
         Promise.all([
             fetchTopics(accessToken),
-            getPrompts(accessToken)
+            getPrompts(accessToken),
+            getStepTypes(accessToken)
         ])
-        .then(([t, p]) => {
+        .then(([t, p, s]) => {
             setTopics(t)
             setPrompts(p)
+            setStepTypes(s)
         })
         .catch(err => setError("Failed to load initial data: " + err.message))
     }, [accessToken])
@@ -142,7 +140,7 @@ export default function CreatePipelinePage() {
                                     }}
                                     disabled={loading}
                                 >
-                                    {STEP_TYPES.map(t => (
+                                    {stepTypes.map(t => (
                                         <option key={t.type} value={t.type}>{t.label}</option>
                                     ))}
                                 </select>
@@ -226,7 +224,7 @@ export default function CreatePipelinePage() {
                         ))}
                     </div>
                     <button
-                        onClick={() => setSelectedSteps([...selectedSteps, { type: 'TOPICS_GENERATION', systemPrompt: '', userPrompt: '' }])}
+                        onClick={() => setSelectedSteps([...selectedSteps, { type: stepTypes[0]?.type || 'TOPICS_GENERATION', systemPrompt: '', userPrompt: '' }])}
                         disabled={loading}
                         className="mt-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
                     >

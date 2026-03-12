@@ -3,16 +3,12 @@
 import {useEffect, useState} from 'react'
 import {useParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
 import Link from 'next/link';
 
-const STEPS = [
-    { id: 0, label: 'Topics' },
-    { id: 1, label: 'Questions' },
-]
 
 export default function PipelineDetailsPage() {
     const {pipelineName} = useParams()
@@ -22,6 +18,7 @@ export default function PipelineDetailsPage() {
     const [selectedStep, setSelectedStep] = useState<number>(0)
     const [yaml, setYaml] = useState<string>('')
     const [allPrompts, setAllPrompts] = useState<Prompt[]>([])
+    const [stepTypes, setStepTypes] = useState<{type: string, label: string}[]>([])
     const [systemPrompt, setSystemPrompt] = useState<string>('')
     const [systemPromptName, setSystemPromptName] = useState<string>('')
     const [userPrompt, setUserPrompt] = useState<string>('')
@@ -45,12 +42,14 @@ export default function PipelineDetailsPage() {
         Promise.all([
             getPipeline(accessToken, pipelineName as string),
             fetchTopics(accessToken),
-            getPrompts(accessToken)
+            getPrompts(accessToken),
+            getStepTypes(accessToken)
         ])
-        .then(([p, t, pr]) => {
+        .then(([p, t, pr, st]) => {
             setPipeline(p)
             setTopics(t)
             setAllPrompts(pr)
+            setStepTypes(st)
         })
         .catch(err => setError(err.message))
         .finally(() => setLoading(false))
@@ -312,10 +311,13 @@ export default function PipelineDetailsPage() {
         }
     }
 
-    const stepsToDisplay = pipeline?.steps.map(s => ({
-        id: s.step,
-        label: `${s.type === 'TOPICS_GENERATION' ? 'Topics' : s.type === 'QUESTIONS_GENERATION' ? 'Questions' : s.type}`
-    })) || STEPS
+    const stepsToDisplay = pipeline?.steps.map(s => {
+        const typeInfo = stepTypes.find(st => st.type === s.type)
+        return {
+            id: s.step,
+            label: typeInfo ? typeInfo.label : s.type
+        }
+    }) || []
 
     if (loading) return <div className="p-6 text-gray-600">Loading pipeline details...</div>
     if (error && !pipeline) return <div className="p-6 text-red-600">Error: {error}</div>

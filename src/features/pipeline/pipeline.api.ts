@@ -76,6 +76,23 @@ export async function getPipelines(
     return response.json()
 }
 
+export async function getStepTypes(
+    accessToken: string
+) : Promise<{type: string, label: string}[]> {
+    const response =
+        await fetch(`${AI_API}/pipeline/step-types`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+            method: 'GET',
+        })
+    if (!response.ok) {
+        throw new Error('Failed to fetch Step Types.')
+    }
+
+    return response.json()
+}
+
 export async function getPipeline(
     accessToken: string,
     pipelineName: string
