@@ -336,8 +336,9 @@ export default function PipelineDetailsPage() {
                     <div className="flex flex-col items-end border-l pl-6 border-gray-200">
                         <div className="text-sm font-semibold text-gray-700 mb-1">Pipeline Status</div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                            pipeline?.status.includes('PENDING') ? "bg-yellow-100 text-yellow-800" :
+                            pipeline?.status.includes('PENDING') || pipeline?.status.includes('WAITING') ? "bg-yellow-100 text-yellow-800" :
                             pipeline?.status.includes('APPROVED') || pipeline?.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                            pipeline?.status === 'FAILED' ? 'bg-red-100 text-red-800' :
                             'bg-blue-100 text-blue-800'
                         }`}>
                             {pipeline?.status}
