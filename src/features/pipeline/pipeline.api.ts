@@ -8,10 +8,10 @@ export async function createPipeline(
     topicKey: string,
     steps: { 
         type: string, 
-        systemPromptName?: string, 
-        systemPrompt?: string, 
-        userPromptName?: string, 
-        userPrompt?: string 
+        systemPromptName?: string | null, 
+        systemPrompt?: string | null, 
+        userPromptName?: string | null, 
+        userPrompt?: string | null 
     }[] = []
 ) : Promise<Pipeline> {
 
@@ -38,10 +38,10 @@ export async function updatePipelineMetadata(
     topicKey?: string,
     steps?: { 
         type: string, 
-        systemPromptName?: string, 
-        systemPrompt?: string, 
-        userPromptName?: string, 
-        userPrompt?: string 
+        systemPromptName?: string | null, 
+        systemPrompt?: string | null, 
+        userPromptName?: string | null, 
+        userPrompt?: string | null 
     }[]
 ): Promise<Pipeline> {
     const response = await fetch(`${AI_API}/pipeline/${pipelineName}`, {
