@@ -3,7 +3,7 @@
 import {useEffect, useState} from 'react'
 import {useParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
@@ -252,6 +252,26 @@ export default function PipelineDetailsPage() {
             if (systemPromptName === name) setSystemPromptName('')
             if (userPromptName === name) setUserPromptName('')
             setSuccess(`Prompt '${name}' deleted successfully!`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleRemoveArtifact = async () => {
+        if (!accessToken || !pipelineName || selectedStep === null) return
+        if (!confirm(`Are you sure you want to remove the artifact for step ${selectedStep}? This will delete the file and all generated progress.`)) return
+        
+        setSaving(true)
+        setError(null)
+        setSuccess(null)
+        
+        try {
+            const updated = await removeArtifactByStep(accessToken, pipelineName as string, selectedStep)
+            setPipeline(updated)
+            setYaml('')
+            setSuccess(`Artifact for step ${selectedStep} removed successfully!`)
         } catch (err: unknown) {
             setError((err as Error).message)
         } finally {
@@ -649,28 +669,22 @@ export default function PipelineDetailsPage() {
                 </div>
             </div>
 
-            {pipeline?.status === 'FAILED' && (
+            {(pipeline?.status === 'PAUSED' || pipeline?.status === 'ABORTED' || pipeline?.status === 'FAILED') && (
                 <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex justify-between items-center">
-                    <span>Generation FAILED. You can continue from where it stopped.</span>
-                    <button
-                        onClick={handleRunStep}
-                        className="px-4 py-1 bg-red-600 text-white rounded font-bold text-xs shadow hover:bg-red-700"
-                    >
-                        CONTINUE_ARTIFACT_GENERATION
-                    </button>
+                    <span>Generation {pipeline?.status}. You can manage it below.</span>
                 </div>
             )}
 
             <div className="bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden">
-                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <div>
-                        <span className="text-lg font-bold text-gray-800">
-                            Artifact for {stepsToDisplay.find(s => s.id === selectedStep)?.label}
-                        </span>
-                        {artifactLoading && <span className="ml-3 text-sm text-gray-500 italic">Loading...</span>}
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
+                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                    <div className="flex justify-between items-center mb-4">
+                        <div>
+                            <span className="text-lg font-bold text-gray-800">
+                                Artifact for {stepsToDisplay.find(s => s.id === selectedStep)?.label}
+                            </span>
+                            {artifactLoading && <span className="ml-3 text-sm text-gray-500 italic">Loading...</span>}
+                        </div>
+                        
                         <div className="flex items-center">
                             <label className="text-sm font-semibold text-gray-700 mr-2">Status:</label>
                             <select
@@ -680,61 +694,76 @@ export default function PipelineDetailsPage() {
                             >
                                 <option value="PENDING_FOR_APPROVAL">PENDING_FOR_APPROVAL</option>
                                 <option value="APPROVED">APPROVED</option>
+                                <option value="PAUSED">PAUSED</option>
+                                <option value="ABORTED">ABORTED</option>
                             </select>
                         </div>
-                        {pipeline?.status === 'GENERATION_IN_PROGRESS' ? (
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={handleSave}
+                            disabled={saving || artifactLoading || running}
+                            className={`px-4 py-1.5 bg-blue-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-blue-700 transition-all ${
+                                (saving || artifactLoading || running) ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                        >
+                            {saving ? 'Saving...' : 'SAVE_ARTIFACT'}
+                        </button>
+
+                        {pipeline?.status === 'GENERATION_IN_PROGRESS' && (
                             <>
                                 <button
                                     onClick={handlePause}
-                                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-bold text-sm shadow-md hover:bg-yellow-600 transition-all"
+                                    className="px-4 py-1.5 bg-yellow-500 text-white rounded-lg font-bold text-xs shadow-md hover:bg-yellow-600 transition-all"
                                 >
                                     PAUSE_ARTIFACT_GENERATION
                                 </button>
                                 <button
                                     onClick={handleAbort}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition-all"
+                                    className="px-4 py-1.5 bg-red-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-red-700 transition-all"
                                 >
                                     ABORT_ARTIFACT_GENERATION
                                 </button>
                             </>
-                        ) : (
-                            <>
-                                {(pipeline?.status === 'GENERATION_PAUSED' || pipeline?.status === 'GENERATION_ABORTED' || pipeline?.status === 'FAILED') ? (
-                                    <button
-                                        onClick={handleRunStep}
-                                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-green-700 transition-all"
-                                    >
-                                        CONTINUE_ARTIFACT_GENERATION
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={handleRunStep}
-                                        disabled={running || artifactLoading}
-                                        className={`px-5 py-2 ${pipeline?.steps.find(s => s.step === selectedStep)?.status ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-bold text-sm shadow-md transition-all ${
-                                            (running || artifactLoading) ? 'opacity-50 cursor-not-allowed' : ''
-                                        }`}
-                                    >
-                                        {running ? 'Generating...' : (pipeline?.steps.find(s => s.step === selectedStep)?.status ? 'Regenerate Artifact' : 'Generate Artifact')}
-                                    </button>
-                                )}
-                            </>
                         )}
-                        <button
-                            onClick={handleSave}
-                            disabled={saving || artifactLoading || !yaml || running}
-                            className={`px-5 py-2 bg-blue-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-blue-700 transition-all ${
-                                (saving || artifactLoading || !yaml || running) ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                        >
-                            {saving ? 'Saving...' : 'Save Artifact'}
-                        </button>
+
+                        {(pipeline?.status === 'PAUSED' && artifactStatus === 'PAUSED') && (
+                            <button
+                                onClick={handleRunStep}
+                                disabled={running || artifactLoading}
+                                className="px-4 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-green-700 transition-all"
+                            >
+                                {running ? 'Running...' : 'CONTINUE_ARTIFACT_GENERATION'}
+                            </button>
+                        )}
+
+                        {pipeline?.steps.find(s => s.step === selectedStep)?.status === null && (
+                            <button
+                                onClick={handleRunStep}
+                                disabled={running || artifactLoading}
+                                className="px-4 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-green-700 transition-all"
+                            >
+                                {running ? 'Generating...' : 'GENERATE_ARTIFACT'}
+                            </button>
+                        )}
+
+                        {pipeline?.steps.find(s => s.step === selectedStep)?.status !== null && (
+                            <button
+                                onClick={handleRemoveArtifact}
+                                disabled={saving || running || artifactLoading}
+                                className="px-4 py-1.5 bg-gray-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-gray-700 transition-all"
+                            >
+                                REMOVE_ARTIFACT
+                            </button>
+                        )}
 
                         {pipeline?.steps.find(s => s.step === selectedStep)?.type === 'TOPICS_GENERATION' && (
                             <button
                                 onClick={handlePublishTopics}
                                 disabled={publishing || artifactLoading || running || artifactStatus !== 'APPROVED'}
                                 title={artifactStatus !== 'APPROVED' ? "Only approved artifact can be published" : ""}
-                                className={`px-5 py-2 bg-purple-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-purple-700 transition-all ${
+                                className={`px-4 py-1.5 bg-purple-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-purple-700 transition-all ${
                                     (publishing || artifactLoading || running || artifactStatus !== 'APPROVED') ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                             >

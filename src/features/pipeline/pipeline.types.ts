@@ -1,4 +1,4 @@
-export type ArtifactStatus = 'PENDING_FOR_APPROVAL' | 'APPROVED'
+export type ArtifactStatus = 'PENDING_FOR_APPROVAL' | 'APPROVED' | 'PAUSED' | 'ABORTED'
 
 export type PipelineStep = {
     step: number
