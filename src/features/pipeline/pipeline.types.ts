@@ -19,6 +19,11 @@ export type Prompt = {
     content: string
 }
 
+export type GenerationLog = {
+    message: string
+    createdAt: string
+}
+
 export type Pipeline = {
     pipelineName: string
     topicKey: string
@@ -26,4 +31,5 @@ export type Pipeline = {
     createdAt: string
     updatedAt: string
     steps: PipelineStep[]
+    logs: GenerationLog[]
 }

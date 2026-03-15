@@ -3,7 +3,7 @@
 import {useEffect, useState} from 'react'
 import {useParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
@@ -127,6 +127,29 @@ export default function PipelineDetailsPage() {
 
         return () => { ignore = true }
     }, [accessToken, pipelineName, selectedStep, pipeline?.steps])
+
+    useEffect(() => {
+        if (!accessToken || !pipelineName || pipeline?.status !== 'GENERATION_IN_PROGRESS') return
+
+        const interval = setInterval(async () => {
+            try {
+                const updated = await getPipeline(accessToken, pipelineName as string)
+                setPipeline(updated)
+                
+                // Also update YAML if we're on the current step being generated
+                // For simplicity, always fetch if it's the selected step and it has at least some status
+                const stepInfo = updated.steps.find(s => s.step === selectedStep)
+                if (stepInfo && (stepInfo.status || updated.status === 'GENERATION_IN_PROGRESS')) {
+                     const newYaml = await getArtifactByStep(accessToken, pipelineName as string, selectedStep)
+                     setYaml(newYaml)
+                }
+            } catch (err) {
+                console.error("Polling error:", err)
+            }
+        }, 3000)
+
+        return () => clearInterval(interval)
+    }, [accessToken, pipelineName, pipeline?.status, selectedStep])
 
     const handleTopicChange = async (newTopicKey: string) => {
         if (!accessToken || !pipelineName || !pipeline) return
@@ -368,6 +391,33 @@ export default function PipelineDetailsPage() {
         }
     }
 
+    const handlePause = async () => {
+        if (!accessToken || !pipelineName) return
+        setError(null)
+        setSuccess(null)
+        try {
+            const updated = await pausePipeline(accessToken, pipelineName as string)
+            setPipeline(updated)
+            setSuccess(`Pipeline generation paused.`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        }
+    }
+
+    const handleAbort = async () => {
+        if (!accessToken || !pipelineName) return
+        if (!confirm("Are you sure you want to abort the generation?")) return
+        setError(null)
+        setSuccess(null)
+        try {
+            const updated = await abortPipeline(accessToken, pipelineName as string)
+            setPipeline(updated)
+            setSuccess(`Pipeline generation aborted.`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        }
+    }
+
     const getStepColor = (stepId: number) => {
         const step = pipeline?.steps.find(s => s.step === stepId)
         if (!step || step.status === null) return 'bg-gray-200 text-gray-500 border-gray-300'
@@ -580,6 +630,37 @@ export default function PipelineDetailsPage() {
                 </div>
             </div>
 
+            {/* Logs Section */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden mb-8 flex flex-col">
+                <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">Generation Logs</span>
+                </div>
+                <div className="h-64 overflow-y-auto p-4 font-mono text-[10px] bg-gray-50 text-gray-800">
+                    {pipeline?.logs?.length ? (
+                        pipeline.logs.map((log, i) => (
+                            <div key={i} className="mb-1 border-b border-gray-100 pb-1">
+                                <span className="text-gray-400 mr-2">[{new Date(log.createdAt).toLocaleTimeString()}]</span>
+                                {log.message}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-gray-400 italic">No logs available.</div>
+                    )}
+                </div>
+            </div>
+
+            {pipeline?.status === 'FAILED' && (
+                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex justify-between items-center">
+                    <span>Generation FAILED. You can continue from where it stopped.</span>
+                    <button
+                        onClick={handleRunStep}
+                        className="px-4 py-1 bg-red-600 text-white rounded font-bold text-xs shadow hover:bg-red-700"
+                    >
+                        CONTINUE_ARTIFACT_GENERATION
+                    </button>
+                </div>
+            )}
+
             <div className="bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden">
                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                     <div>
@@ -601,15 +682,43 @@ export default function PipelineDetailsPage() {
                                 <option value="APPROVED">APPROVED</option>
                             </select>
                         </div>
-                        <button
-                            onClick={handleRunStep}
-                            disabled={running || artifactLoading}
-                            className={`px-5 py-2 ${pipeline?.steps.find(s => s.step === selectedStep)?.status ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-bold text-sm shadow-md transition-all ${
-                                (running || artifactLoading) ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                        >
-                            {running ? 'Generating...' : (pipeline?.steps.find(s => s.step === selectedStep)?.status ? 'Regenerate Artifact' : 'Generate Artifact')}
-                        </button>
+                        {pipeline?.status === 'GENERATION_IN_PROGRESS' ? (
+                            <>
+                                <button
+                                    onClick={handlePause}
+                                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-bold text-sm shadow-md hover:bg-yellow-600 transition-all"
+                                >
+                                    PAUSE_ARTIFACT_GENERATION
+                                </button>
+                                <button
+                                    onClick={handleAbort}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition-all"
+                                >
+                                    ABORT_ARTIFACT_GENERATION
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                {(pipeline?.status === 'GENERATION_PAUSED' || pipeline?.status === 'GENERATION_ABORTED' || pipeline?.status === 'FAILED') ? (
+                                    <button
+                                        onClick={handleRunStep}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-green-700 transition-all"
+                                    >
+                                        CONTINUE_ARTIFACT_GENERATION
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleRunStep}
+                                        disabled={running || artifactLoading}
+                                        className={`px-5 py-2 ${pipeline?.steps.find(s => s.step === selectedStep)?.status ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-bold text-sm shadow-md transition-all ${
+                                            (running || artifactLoading) ? 'opacity-50 cursor-not-allowed' : ''
+                                        }`}
+                                    >
+                                        {running ? 'Generating...' : (pipeline?.steps.find(s => s.step === selectedStep)?.status ? 'Regenerate Artifact' : 'Generate Artifact')}
+                                    </button>
+                                )}
+                            </>
+                        )}
                         <button
                             onClick={handleSave}
                             disabled={saving || artifactLoading || !yaml || running}

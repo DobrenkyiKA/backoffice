@@ -250,7 +250,7 @@ export async function publishTopicsArtifact(
     accessToken: string,
     pipelineName: string
 ): Promise<Pipeline> {
-    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/publish-topics`, {
+    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/publish`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
@@ -259,6 +259,40 @@ export async function publishTopicsArtifact(
     if (!response.ok) {
         const errorData = await response.json().catch(() => null)
         throw new Error(errorData?.message || `Failed to publish topics artifact.`)
+    }
+    return response.json()
+}
+
+export async function pausePipeline(
+    accessToken: string,
+    pipelineName: string
+): Promise<Pipeline> {
+    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/pause`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'POST',
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || `Failed to pause pipeline.`)
+    }
+    return response.json()
+}
+
+export async function abortPipeline(
+    accessToken: string,
+    pipelineName: string
+): Promise<Pipeline> {
+    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/abort`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'POST',
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || `Failed to abort pipeline.`)
     }
     return response.json()
 }
