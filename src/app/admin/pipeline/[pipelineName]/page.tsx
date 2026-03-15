@@ -35,10 +35,50 @@ export default function PipelineDetailsPage() {
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
+    const [prevAccessToken, setPrevAccessToken] = useState<string | null>(accessToken)
+    const [prevPipelineName, setPrevPipelineName] = useState<string | string[] | undefined>(pipelineName)
+    const [prevSelectedStep, setPrevSelectedStep] = useState<number>(selectedStep)
+    const [prevPipeline, setPrevPipeline] = useState<Pipeline | null>(null)
+
+    if (accessToken !== prevAccessToken || pipelineName !== prevPipelineName) {
+        setPrevAccessToken(accessToken)
+        setPrevPipelineName(pipelineName)
+        if (accessToken && pipelineName) {
+            setLoading(true)
+            setError(null)
+        } else {
+            setLoading(false)
+        }
+    }
+
+    if (selectedStep !== prevSelectedStep || pipeline !== prevPipeline) {
+        setPrevSelectedStep(selectedStep)
+        setPrevPipeline(pipeline)
+
+        const stepInfo = pipeline?.steps.find(s => s.step === selectedStep)
+        if (stepInfo) {
+            setSystemPrompt(stepInfo.systemPrompt || '')
+            setSystemPromptName(stepInfo.systemPromptName || '')
+            setUserPrompt(stepInfo.userPrompt || '')
+            setUserPromptName(stepInfo.userPromptName || '')
+            setArtifactStatus(stepInfo.status || 'PENDING_FOR_APPROVAL')
+
+            if (stepInfo.status !== undefined && stepInfo.status !== null) {
+                setArtifactLoading(true)
+            } else {
+                setYaml('')
+                setArtifactLoading(false)
+            }
+        } else {
+            setYaml('')
+            setArtifactLoading(false)
+        }
+    }
+
     useEffect(() => {
         if (!accessToken || !pipelineName) return
 
-        setLoading(true)
+        let ignore = false
         Promise.all([
             getPipeline(accessToken, pipelineName as string),
             fetchTopics(accessToken),
@@ -46,13 +86,20 @@ export default function PipelineDetailsPage() {
             getStepTypes(accessToken)
         ])
         .then(([p, t, pr, st]) => {
+            if (ignore) return
             setPipeline(p)
             setTopics(t)
             setAllPrompts(pr)
             setStepTypes(st)
         })
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false))
+        .catch(err => {
+            if (!ignore) setError(err.message)
+        })
+        .finally(() => {
+            if (!ignore) setLoading(false)
+        })
+
+        return () => { ignore = true }
     }, [accessToken, pipelineName])
 
     useEffect(() => {
@@ -60,31 +107,26 @@ export default function PipelineDetailsPage() {
 
         const stepInfo = pipeline?.steps.find(s => s.step === selectedStep)
         if (stepInfo?.status === undefined || stepInfo?.status === null) {
-            setYaml('')
             return
         }
 
-        setArtifactLoading(true)
-        setArtifactStatus(stepInfo.status || 'PENDING_FOR_APPROVAL')
+        let ignore = false
         getArtifactByStep(accessToken, pipelineName as string, selectedStep)
-        .then(y => setYaml(y))
-        .catch(err => {
-            setYaml('')
-            // Don't show error if artifact just doesn't exist yet
-            console.error(`Failed to load artifact for step ${selectedStep}: ${err.message}`)
+        .then(y => {
+            if (!ignore) setYaml(y)
         })
-        .finally(() => setArtifactLoading(false))
-    }, [accessToken, pipelineName, selectedStep, pipeline?.steps])
+        .catch(err => {
+            if (!ignore) {
+                setYaml('')
+                console.error(`Failed to load artifact for step ${selectedStep}: ${err.message}`)
+            }
+        })
+        .finally(() => {
+            if (!ignore) setArtifactLoading(false)
+        })
 
-    useEffect(() => {
-        const stepInfo = pipeline?.steps.find(s => s.step === selectedStep)
-        if (stepInfo) {
-            setSystemPrompt(stepInfo.systemPrompt || '')
-            setSystemPromptName(stepInfo.systemPromptName || '')
-            setUserPrompt(stepInfo.userPrompt || '')
-            setUserPromptName(stepInfo.userPromptName || '')
-        }
-    }, [selectedStep, pipeline])
+        return () => { ignore = true }
+    }, [accessToken, pipelineName, selectedStep, pipeline?.steps])
 
     const handleTopicChange = async (newTopicKey: string) => {
         if (!accessToken || !pipelineName || !pipeline) return

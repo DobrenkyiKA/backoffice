@@ -13,19 +13,38 @@ export default function PipelineListPage() {
     const [pipelines, setPipelines] = useState<Pipeline[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [prevAccessToken, setPrevAccessToken] = useState<string | null>(null)
 
-    const fetchPipelines = () => {
-        if (!accessToken) return
-
-        setLoading(true)
-        getPipelines(accessToken)
-            .then(setPipelines)
-            .catch(err => setError(err.message))
-            .finally(() => setLoading(false))
+    if (accessToken !== prevAccessToken) {
+        setPrevAccessToken(accessToken)
+        if (accessToken) {
+            setLoading(true)
+            setError(null)
+        } else {
+            setLoading(false)
+            setError(null)
+            setPipelines([])
+        }
     }
 
     useEffect(() => {
-        fetchPipelines()
+        if (!accessToken) return
+
+        let ignore = false
+        getPipelines(accessToken)
+            .then(data => {
+                if (!ignore) setPipelines(data)
+            })
+            .catch(err => {
+                if (!ignore) setError(err.message)
+            })
+            .finally(() => {
+                if (!ignore) setLoading(false)
+            })
+
+        return () => {
+            ignore = true
+        }
     }, [accessToken])
 
     const handleDelete = async (pipelineName: string) => {
@@ -35,8 +54,8 @@ export default function PipelineListPage() {
         try {
             await deletePipeline(accessToken, pipelineName)
             setPipelines(pipelines.filter(p => p.pipelineName !== pipelineName))
-        } catch (err: any) {
-            alert(err.message)
+        } catch (err: unknown) {
+            alert((err as Error).message)
         }
     }
 

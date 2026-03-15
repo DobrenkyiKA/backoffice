@@ -97,7 +97,7 @@ export default function CreatePipelinePage() {
                         disabled={loading}
                     />
                     <p className="mt-2 text-xs text-gray-400">
-                        Whitespaces will be replaced with "-", only alphanumeric and "-" symbols are allowed. The name will be lower-cased.
+                        Whitespaces will be replaced with &quot;-&quot;, only alphanumeric and &quot;-&quot; symbols are allowed. The name will be lower-cased.
                     </p>
                 </div>
 

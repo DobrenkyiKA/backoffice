@@ -19,7 +19,6 @@ export function TopicForm({
                                parentPath = null,
                                onSave,
                                onCancel,
-                               isEdit = false,
                            }: Props) {
     const [key, setKey] = useState(initialKey.toLowerCase().replace(/\s+/g, '-'))
     const [name, setName] = useState(initialName)
@@ -44,8 +43,8 @@ export function TopicForm({
         setError(null)
         try {
             await onSave(key, name, coverageArea, exclusions)
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError((err as Error).message)
             setLoading(false)
         }
     }

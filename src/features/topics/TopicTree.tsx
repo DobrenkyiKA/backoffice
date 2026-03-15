@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react'
+import {useMemo, useState} from 'react'
 import {buildTopicTree} from './topic.tree.utils'
 import {TopicNodeItem} from './TopicNodeItem'
 import {useTopics} from './useTopics'
@@ -26,6 +26,46 @@ export function TopicTree({
     const [deleteError, setDeleteError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [searchInDescription, setSearchInDescription] = useState(false)
+    const [prevSearchTerm, setPrevSearchTerm] = useState('')
+    const [prevSearchInDescription, setPrevSearchInDescription] = useState(false)
+    const [prevTopics, setPrevTopics] = useState<Topic[]>([])
+
+    if (searchTerm !== prevSearchTerm || searchInDescription !== prevSearchInDescription || topics !== prevTopics) {
+        setPrevSearchTerm(searchTerm)
+        setPrevSearchInDescription(searchInDescription)
+        setPrevTopics(topics)
+
+        const trimmedTerm = searchTerm.trim()
+        if (trimmedTerm) {
+            const term = trimmedTerm.toLowerCase()
+            const matchingPaths = topics.filter(t => {
+                const nameMatch = t.name.toLowerCase().includes(term)
+                if (!searchInDescription) return nameMatch
+                const descMatch =
+                    (t.coverageArea || '').toLowerCase().includes(term) ||
+                    (t.exclusions || '').toLowerCase().includes(term)
+                return nameMatch || descMatch
+            }).map(t => t.path)
+
+            if (matchingPaths.length > 0) {
+                const next = new Set(expandedPaths)
+                let changed = false
+                matchingPaths.forEach(path => {
+                    const parts = path.split('/')
+                    for (let i = 1; i < parts.length; i++) {
+                        const p = parts.slice(0, i).join('/')
+                        if (!next.has(p)) {
+                            next.add(p)
+                            changed = true
+                        }
+                    }
+                })
+                if (changed) {
+                    setExpandedPaths(next)
+                }
+            }
+        }
+    }
 
     const filteredTopics = useMemo(() => {
         const trimmedTerm = searchTerm.trim()
@@ -57,39 +97,14 @@ export function TopicTree({
 
     const tree = useMemo(() => buildTopicTree(filteredTopics), [filteredTopics])
 
-    // Auto-expand paths during search
-    useEffect(() => {
-        const trimmedTerm = searchTerm.trim()
-        if (trimmedTerm) {
-            const term = trimmedTerm.toLowerCase()
-            const matchingPaths = topics.filter(t => {
-                const nameMatch = t.name.toLowerCase().includes(term)
-                if (!searchInDescription) return nameMatch
-                const descMatch =
-                    (t.coverageArea || '').toLowerCase().includes(term) ||
-                    (t.exclusions || '').toLowerCase().includes(term)
-                return nameMatch || descMatch
-            }).map(t => t.path)
-
-            const pathsToExpand = new Set<string>()
-            matchingPaths.forEach(path => {
-                const parts = path.split('/')
-                for (let i = 1; i < parts.length; i++) {
-                    pathsToExpand.add(parts.slice(0, i).join('/'))
-                }
-            })
-            setExpandedPaths(prev => {
-                const next = new Set(prev)
-                pathsToExpand.forEach(p => next.add(p))
-                return next
-            })
-        }
-    }, [searchTerm, searchInDescription, topics])
-
     function toggleExpand(path: string) {
         setExpandedPaths(prev => {
             const next = new Set(prev)
-            next.has(path) ? next.delete(path) : next.add(path)
+            if (next.has(path)) {
+                next.delete(path)
+            } else {
+                next.add(path)
+            }
             return next
         })
     }
@@ -110,8 +125,8 @@ export function TopicTree({
             try {
                 await deleteTopic(action.topic.key)
                 setAction(null)
-            } catch (err: any) {
-                setDeleteError(err.message)
+            } catch (err: unknown) {
+                setDeleteError((err as Error).message)
             }
         }
     }
@@ -119,8 +134,8 @@ export function TopicTree({
     const handleMove = async (key: string, newParentPath: string | null) => {
         try {
             await moveTopic(key, newParentPath)
-        } catch (err: any) {
-            alert(err.message)
+        } catch (err: unknown) {
+            alert((err as Error).message)
         }
     }
 

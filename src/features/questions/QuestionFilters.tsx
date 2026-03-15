@@ -16,20 +16,24 @@ type Props = {
 export function QuestionFilters({ filters, onChange }: Props) {
     const [labelsInput, setLabelsInput] = useState(filters.labels.join(', '))
     const [searchTermInput, setSearchTermInput] = useState(filters.searchTerm)
+    const [prevLabels, setPrevLabels] = useState(filters.labels)
+    const [prevSearchTerm, setPrevSearchTerm] = useState(filters.searchTerm)
 
-    useEffect(() => {
+    if (filters.labels !== prevLabels) {
         const propValue = filters.labels.join(', ')
         const currentParsedValue = labelsInput.split(',').map(v => v.trim()).filter(Boolean).join(', ')
         if (propValue !== currentParsedValue) {
             setLabelsInput(propValue)
         }
-    }, [filters.labels])
+        setPrevLabels(filters.labels)
+    }
 
-    useEffect(() => {
+    if (filters.searchTerm !== prevSearchTerm) {
         if (filters.searchTerm !== searchTermInput) {
             setSearchTermInput(filters.searchTerm)
         }
-    }, [filters.searchTerm])
+        setPrevSearchTerm(filters.searchTerm)
+    }
 
     useEffect(() => {
         const timer = setTimeout(() => {

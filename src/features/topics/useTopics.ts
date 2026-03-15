@@ -9,7 +9,19 @@ export function useTopics() {
     const {accessToken} = useAuth()
     const [topics, setTopics] = useState<Topic[]>([])
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string |null> (null)
+    const [error, setError] = useState<string | null>(null)
+    const [prevAccessToken, setPrevAccessToken] = useState(accessToken)
+
+    if (accessToken !== prevAccessToken) {
+        setPrevAccessToken(accessToken)
+        if (accessToken) {
+            setLoading(true)
+            setError(null)
+        } else {
+            setLoading(false)
+            setTopics([])
+        }
+    }
 
     const refresh = useCallback(() => {
         if (!accessToken) return
@@ -22,8 +34,13 @@ export function useTopics() {
     }, [accessToken])
 
     useEffect(() => {
-        refresh()
-    }, [refresh])
+        if (accessToken) {
+            api.fetchTopics(accessToken)
+                .then(setTopics)
+                .catch(err => setError(err.message))
+                .finally(() => setLoading(false))
+        }
+    }, [accessToken])
 
     const createTopic = async (key: string, name: string, parentPath: string | null, coverageArea: string, exclusions: string) => {
         if (!accessToken) return
