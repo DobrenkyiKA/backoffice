@@ -392,7 +392,7 @@ export default function PipelineDetailsPage() {
                             >
                                 {running ? 'Running...' : 'Run Pipeline'}
                             </button>
-                            {pipeline?.status === 'ARTIFACT_APPROVED' && (
+                            {(pipeline?.status === 'ARTIFACT_APPROVED' || (pipeline?.status === 'FAILED' && pipeline?.steps.some(s => s.status === 'APPROVED'))) && (
                                 <button
                                     onClick={handleContinuePipelineExecution}
                                     disabled={running || loading}
