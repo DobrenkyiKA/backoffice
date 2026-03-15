@@ -636,7 +636,7 @@ export default function PipelineDetailsPage() {
                 </div>
                 <div className="p-0">
                     <textarea
-                        className="w-full h-[600px] font-mono text-sm p-6 bg-gray-900 text-gray-100 focus:outline-none border-none resize-none leading-relaxed"
+                        className="w-full h-150 font-mono text-sm p-6 bg-gray-900 text-gray-100 focus:outline-none border-none resize-none leading-relaxed"
                         value={yaml}
                         onChange={(e) => setYaml(e.target.value)}
                         placeholder={artifactLoading ? "Loading..." : "No artifact data for this step."}
