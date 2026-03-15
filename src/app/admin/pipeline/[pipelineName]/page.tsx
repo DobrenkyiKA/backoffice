@@ -333,7 +333,6 @@ export default function PipelineDetailsPage() {
         switch (step.status) {
             case 'APPROVED': return 'bg-green-500 text-white border-green-600'
             case 'PENDING_FOR_APPROVAL': return 'bg-yellow-400 text-yellow-900 border-yellow-500'
-            case 'TO_BE_REGENERATED': return 'bg-red-500 text-white border-red-600'
             default: return 'bg-gray-200 text-gray-500 border-gray-300'
         }
     }
@@ -556,9 +555,8 @@ export default function PipelineDetailsPage() {
                                 onChange={(e) => setArtifactStatus(e.target.value as ArtifactStatus)}
                                 className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             >
-                                <option value="PENDING_FOR_APPROVAL">Pending Approval</option>
-                                <option value="APPROVED">Approved</option>
-                                <option value="TO_BE_REGENERATED">To Be Regenerated</option>
+                                <option value="PENDING_FOR_APPROVAL">PENDING_FOR_APPROVAL</option>
+                                <option value="APPROVED">APPROVED</option>
                             </select>
                         </div>
                         <button
