@@ -231,6 +231,33 @@ export default function PipelineDetailsPage() {
         }
     }
 
+    const handleContinuePipelineExecution = async () => {
+        if (!accessToken || !pipelineName || !pipeline) return
+        
+        const lastApprovedIndex = [...pipeline.steps].reverse().findIndex(s => s.status === 'APPROVED')
+        const nextStep = lastApprovedIndex === -1 ? 0 : pipeline.steps.length - 1 - lastApprovedIndex + 1
+        
+        if (nextStep >= pipeline.steps.length) {
+            setSuccess("All steps are already approved!")
+            return
+        }
+
+        setRunning(true)
+        setError(null)
+        setSuccess(null)
+        
+        try {
+            const updated = await runPipelineFrom(accessToken, pipelineName as string, nextStep)
+            setPipeline(updated)
+            setSuccess(`Pipeline execution continued from step ${nextStep} successfully!`)
+            setSelectedStep(nextStep)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        } finally {
+            setRunning(false)
+        }
+    }
+
     const handleRunPipelineFrom = async () => {
         if (!accessToken || !pipelineName) return
         
@@ -366,6 +393,17 @@ export default function PipelineDetailsPage() {
                             >
                                 {running ? 'Running...' : 'Run Pipeline'}
                             </button>
+                            {pipeline?.status === 'ARTIFACT_APPROVED' && (
+                                <button
+                                    onClick={handleContinuePipelineExecution}
+                                    disabled={running || loading}
+                                    className={`px-4 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-green-700 transition-all ${
+                                        (running || loading) ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                >
+                                    {running ? 'Running...' : 'CONTINUE_PIPELINE_EXECUTION'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
