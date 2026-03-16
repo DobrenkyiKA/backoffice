@@ -21,6 +21,7 @@ export type Prompt = {
 
 export type GenerationLog = {
     message: string
+    stepOrder: number | null
     createdAt: string
 }
 

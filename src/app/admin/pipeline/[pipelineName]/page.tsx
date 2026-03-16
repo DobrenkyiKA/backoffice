@@ -719,15 +719,15 @@ export default function PipelineDetailsPage() {
                     <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">Generation Logs</span>
                 </div>
                 <div className="h-64 overflow-y-auto p-4 font-mono text-[10px] bg-gray-50 text-gray-800">
-                    {pipeline?.logs?.length ? (
-                        pipeline.logs.map((log, i) => (
+                    {pipeline?.logs?.filter(log => log.stepOrder === selectedStep).length ? (
+                        pipeline.logs.filter(log => log.stepOrder === selectedStep).map((log, i) => (
                             <div key={i} className="mb-1 border-b border-gray-100 pb-1">
                                 <span className="text-gray-400 mr-2">[{new Date(log.createdAt).toLocaleTimeString()}]</span>
                                 {log.message}
                             </div>
                         ))
                     ) : (
-                        <div className="text-gray-400 italic">No logs available.</div>
+                        <div className="text-gray-400 italic">No logs available for this step.</div>
                     )}
                 </div>
             </div>
