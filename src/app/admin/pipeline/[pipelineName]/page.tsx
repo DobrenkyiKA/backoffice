@@ -791,7 +791,7 @@ export default function PipelineDetailsPage() {
                             </>
                         )}
 
-                        {(pipeline?.status === 'PAUSED' && artifactStatus === 'PAUSED') && (
+                        {((pipeline?.status === 'WAITING_ARTIFACT_APPROVAL' || (pipeline?.status === 'PAUSED')) && artifactStatus === 'PAUSED') && (
                             <button
                                 onClick={handleRunStep}
                                 disabled={running || artifactLoading}
