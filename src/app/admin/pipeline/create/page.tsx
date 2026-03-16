@@ -1,6 +1,6 @@
 'use client'
 
-import {useEffect, useState} from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import {useAuth} from "@/auth/useAuth";
 import {createPipeline, getPrompts, getStepTypes} from "@/features/pipeline/pipeline.api";
 import {fetchTopics} from "@/features/topics/topic.api";
@@ -14,6 +14,8 @@ export default function CreatePipelinePage() {
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState('')
     const [topicKey, setTopicKey] = useState('')
+    const [topicSearch, setTopicSearch] = useState('')
+    const [showSuggestions, setShowSuggestions] = useState(false)
     const [topics, setTopics] = useState<Topic[]>([])
     const [prompts, setPrompts] = useState<Prompt[]>([])
     const [stepTypes, setStepTypes] = useState<{type: string, label: string}[]>([])
@@ -46,6 +48,14 @@ export default function CreatePipelinePage() {
         })
         .catch(err => setError("Failed to load initial data: " + err.message))
     }, [accessToken])
+
+    const filteredTopics = useMemo(() => {
+        const term = topicSearch.toLowerCase();
+        return topics.filter(t => 
+            t.name.toLowerCase().includes(term) ||
+            t.key.toLowerCase().includes(term)
+        );
+    }, [topics, topicSearch]);
 
     function submit() {
         if (!accessToken) return
@@ -107,19 +117,56 @@ export default function CreatePipelinePage() {
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                         Topic
                     </label>
-                    <select
-                        className="w-full border p-2 bg-gray-800 text-white rounded"
-                        value={topicKey}
-                        onChange={e => setTopicKey(e.target.value)}
-                        disabled={loading}
-                    >
-                        <option value="">Select a topic...</option>
-                        {topics.map(topic => (
-                            <option key={topic.key} value={topic.key}>
-                                {topic.name} ({topic.key})
-                            </option>
-                        ))}
-                    </select>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Type to search topic..."
+                            className="w-full border p-2 bg-gray-800 text-white rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            value={topicSearch}
+                            onChange={e => {
+                                setTopicSearch(e.target.value)
+                                setTopicKey('')
+                                setShowSuggestions(true)
+                            }}
+                            onFocus={() => { if (topicSearch) setShowSuggestions(true); }}
+                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                            disabled={loading}
+                        />
+                        {topicSearch && (
+                            <button
+                                onClick={() => {
+                                    setTopicSearch('')
+                                    setTopicKey('')
+                                    setShowSuggestions(true)
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                            >
+                                ✕
+                            </button>
+                        )}
+                        {showSuggestions && topicSearch.length > 0 && (
+                            <ul className="absolute z-50 w-full bg-gray-800 border border-gray-700 rounded mt-1 max-h-60 overflow-auto shadow-xl">
+                                {filteredTopics.length > 0 ? (
+                                    filteredTopics.map(topic => (
+                                        <li
+                                            key={topic.key}
+                                            className="p-2 hover:bg-gray-700 cursor-pointer text-sm text-white border-b border-gray-700 last:border-0"
+                                            onMouseDown={() => {
+                                                setTopicKey(topic.key)
+                                                setTopicSearch(`${topic.name} (${topic.key})`)
+                                                setShowSuggestions(false)
+                                            }}
+                                        >
+                                            <div className="font-medium">{topic.name}</div>
+                                            <div className="text-xs text-gray-400">{topic.key}</div>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li className="p-2 text-sm text-gray-500">No topics found</li>
+                                )}
+                            </ul>
+                        )}
+                    </div>
                 </div>
 
                 <div className="pt-4">

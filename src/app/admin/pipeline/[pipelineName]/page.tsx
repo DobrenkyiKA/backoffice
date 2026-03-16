@@ -1,6 +1,6 @@
 'use client'
 
-import {useEffect, useState} from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import {useParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
 import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
@@ -25,6 +25,8 @@ export default function PipelineDetailsPage() {
     const [userPromptName, setUserPromptName] = useState<string>('')
     const [artifactStatus, setArtifactStatus] = useState<ArtifactStatus>('PENDING_FOR_APPROVAL')
     const [topics, setTopics] = useState<Topic[]>([])
+    const [topicSearch, setTopicSearch] = useState('')
+    const [showSuggestions, setShowSuggestions] = useState(false)
     const [loading, setLoading] = useState(true)
     const [artifactLoading, setArtifactLoading] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -150,6 +152,19 @@ export default function PipelineDetailsPage() {
 
         return () => clearInterval(interval)
     }, [accessToken, pipelineName, pipeline?.status, selectedStep])
+
+    const filteredTopics = useMemo(() => {
+        const term = topicSearch.toLowerCase();
+        return topics.filter(t => 
+            t.name.toLowerCase().includes(term) ||
+            t.key.toLowerCase().includes(term)
+        );
+    }, [topics, topicSearch]);
+
+    const currentTopicName = useMemo(() => {
+        const t = topics.find(t => t.key === pipeline?.topicKey);
+        return t ? `${t.name} (${t.key})` : '';
+    }, [topics, pipeline?.topicKey]);
 
     const handleTopicChange = async (newTopicKey: string) => {
         if (!accessToken || !pipelineName || !pipeline) return
@@ -524,18 +539,57 @@ export default function PipelineDetailsPage() {
                     <h1 className="text-2xl font-extrabold text-white">Pipeline name: {pipelineName}</h1>
                 </div>
             </div>
-            <div className="flex justify-between items-center mb-8">
-                <div className="text-2xl font-extrabold text-white mb-1">Start topic:
-                    <select
-                        value={pipeline?.topicKey || ''}
-                        onChange={(e) => handleTopicChange(e.target.value)}
-                        disabled={updatingTopic || loading}
-                        className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    >
-                        {topics.map(t => (
-                            <option key={t.key} value={t.key}>{t.name} ({t.key})</option>
-                        ))}
-                    </select>
+            <div className="flex flex-col mb-8">
+                <div className="text-2xl font-extrabold text-white mb-2">Start topic:</div>
+                <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder={currentTopicName || "Type to search topic..."}
+                            className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none w-64"
+                            value={topicSearch}
+                            onChange={e => {
+                                setTopicSearch(e.target.value)
+                                setShowSuggestions(true)
+                            }}
+                            onFocus={() => { if (topicSearch) setShowSuggestions(true); }}
+                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                            disabled={updatingTopic || loading}
+                        />
+                        {topicSearch && (
+                            <button
+                                onClick={() => {
+                                    setTopicSearch('')
+                                    setShowSuggestions(true)
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                                ✕
+                            </button>
+                        )}
+                        {showSuggestions && topicSearch.length > 0 && (
+                            <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-auto shadow-lg">
+                                {filteredTopics.length > 0 ? (
+                                    filteredTopics.map(t => (
+                                        <li
+                                            key={t.key}
+                                            className="p-2 hover:bg-blue-50 cursor-pointer text-xs text-gray-900 border-b border-gray-100 last:border-0"
+                                            onMouseDown={() => {
+                                                handleTopicChange(t.key)
+                                                setTopicSearch(`${t.name} (${t.key})`)
+                                                setShowSuggestions(false)
+                                            }}
+                                        >
+                                            <div className="font-bold">{t.name}</div>
+                                            <div className="text-[10px] text-gray-500">{t.key}</div>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li className="p-2 text-xs text-gray-500">No topics found</li>
+                                )}
+                            </ul>
+                        )}
+                    </div>
                 </div>
             </div>
             {/* Pipeline Visual Representation */}
