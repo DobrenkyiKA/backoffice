@@ -691,7 +691,7 @@ export default function PipelineDetailsPage() {
                                     (saving || loading) ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                             >
-                                {saving ? 'Saving...' : 'Link to Pipeline'}
+                                {saving ? 'Saving...' : 'Save'}
                             </button>
                         </div>
                     </div>
