@@ -758,7 +758,7 @@ export default function PipelineDetailsPage() {
                             </button>
                         )}
 
-                        {pipeline?.steps.find(s => s.step === selectedStep)?.type === 'TOPICS_GENERATION' && (
+                        {pipeline?.steps.find(s => s.step === selectedStep)?.type === 'TOPIC_TREE_GENERATION' && (
                             <button
                                 onClick={handlePublishTopics}
                                 disabled={publishing || artifactLoading || running || artifactStatus !== 'APPROVED'}

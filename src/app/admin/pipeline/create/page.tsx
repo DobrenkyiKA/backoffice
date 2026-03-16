@@ -26,8 +26,10 @@ export default function CreatePipelinePage() {
         userPromptName?: string, 
         userPrompt: string
     }[]>([
-        { type: 'TOPICS_GENERATION', systemPrompt: '', userPrompt: '' },
-        { type: 'QUESTIONS_GENERATION', systemPrompt: '', userPrompt: '' }
+        { type: 'TOPIC_TREE_GENERATION', systemPrompt: '', userPrompt: '' },
+        { type: 'QUESTIONS_GENERATION', systemPrompt: '', userPrompt: '' },
+        { type: 'LONG_ANSWERS_GENERATION', systemPrompt: '', userPrompt: '' },
+        { type: 'SHORT_ANSWERS_GENERATION', systemPrompt: '', userPrompt: '' }
     ])
 
     useEffect(() => {
@@ -224,7 +226,7 @@ export default function CreatePipelinePage() {
                         ))}
                     </div>
                     <button
-                        onClick={() => setSelectedSteps([...selectedSteps, { type: stepTypes[0]?.type || 'TOPICS_GENERATION', systemPrompt: '', userPrompt: '' }])}
+                        onClick={() => setSelectedSteps([...selectedSteps, { type: stepTypes[0]?.type || 'TOPIC_TREE_GENERATION', systemPrompt: '', userPrompt: '' }])}
                         disabled={loading}
                         className="mt-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
                     >
