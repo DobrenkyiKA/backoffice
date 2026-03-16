@@ -184,7 +184,7 @@ export default function PipelineDetailsPage() {
         }
     }
 
-    const handleSavePrompts = async () => {
+    const handleSavePrompt = async (type: 'SYSTEM' | 'USER') => {
         if (!accessToken || !pipelineName || !pipeline) return
         
         setSaving(true)
@@ -192,21 +192,20 @@ export default function PipelineDetailsPage() {
         setSuccess(null)
         
         try {
-            const updatedSteps = pipeline.steps.map(s => 
-                s.step === selectedStep 
-                    ? { ...s, systemPromptName, systemPrompt, userPromptName, userPrompt } 
-                    : s
-            ).map(s => ({
-                type: s.type,
-                systemPromptName: s.systemPromptName,
-                systemPrompt: s.systemPrompt,
-                userPromptName: s.userPromptName,
-                userPrompt: s.userPrompt
-            }))
+            const updatedSteps = pipeline.steps.map(s => {
+                const isSelected = s.step === selectedStep
+                return {
+                    type: s.type,
+                    systemPromptName: (isSelected && type === 'SYSTEM') ? systemPromptName : s.systemPromptName,
+                    systemPrompt: (isSelected && type === 'SYSTEM') ? systemPrompt : s.systemPrompt,
+                    userPromptName: (isSelected && type === 'USER') ? userPromptName : s.userPromptName,
+                    userPrompt: (isSelected && type === 'USER') ? userPrompt : s.userPrompt
+                }
+            })
 
             const updated = await updatePipelineMetadata(accessToken, pipelineName as string, undefined, updatedSteps)
             setPipeline(updated)
-            setSuccess(`Prompts for step ${selectedStep} updated successfully!`)
+            setSuccess(`${type === 'SYSTEM' ? 'System' : 'User'} prompt for step ${selectedStep} updated successfully!`)
         } catch (err: unknown) {
             setError((err as Error).message)
         } finally {
@@ -657,6 +656,16 @@ export default function PipelineDetailsPage() {
                             <button onClick={() => handleUpdateExistingPrompt('SYSTEM')} disabled={!systemPromptName} className="p-1 hover:bg-gray-200 rounded" title="Update Shared Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
                             <button onClick={() => handleCreatePrompt('SYSTEM')} className="p-1 hover:bg-gray-200 rounded" title="Save as New Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg></button>
                             <button onClick={() => handleDeletePromptByName(systemPromptName)} disabled={!systemPromptName} className="p-1 hover:bg-gray-200 rounded text-red-500" title="Delete Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                            <button
+                                onClick={() => handleSavePrompt('SYSTEM')}
+                                disabled={saving || loading}
+                                title="Update Pipeline Step with current system prompt"
+                                className={`ml-2 px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${
+                                    (saving || loading) ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            >
+                                {saving ? 'Saving...' : 'Save'}
+                            </button>
                         </div>
                     </div>
                     <textarea
@@ -684,9 +693,9 @@ export default function PipelineDetailsPage() {
                             <button onClick={() => handleCreatePrompt('USER')} className="p-1 hover:bg-gray-200 rounded" title="Save as New Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg></button>
                             <button onClick={() => handleDeletePromptByName(userPromptName)} disabled={!userPromptName} className="p-1 hover:bg-gray-200 rounded text-red-500" title="Delete Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                             <button
-                                onClick={handleSavePrompts}
+                                onClick={() => handleSavePrompt('USER')}
                                 disabled={saving || loading}
-                                title="Update Pipeline Steps with current prompts"
+                                title="Update Pipeline Step with current user prompt"
                                 className={`ml-2 px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${
                                     (saving || loading) ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
