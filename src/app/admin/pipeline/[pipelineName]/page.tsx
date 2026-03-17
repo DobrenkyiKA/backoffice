@@ -1,7 +1,7 @@
 'use client'
 
 import {useEffect, useMemo, useState} from 'react'
-import {useParams} from 'next/navigation'
+import {useParams, usePathname, useRouter, useSearchParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
 import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
@@ -12,10 +12,25 @@ import Link from 'next/link';
 
 export default function PipelineDetailsPage() {
     const {pipelineName} = useParams()
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const selectedStep = useMemo(() => {
+        const step = searchParams.get('step')
+        const parsed = step ? parseInt(step, 10) : 0
+        return isNaN(parsed) ? 0 : parsed
+    }, [searchParams])
+
+    const setSelectedStep = (step: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('step', step.toString())
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
     const {accessToken} = useAuth()
     
     const [pipeline, setPipeline] = useState<Pipeline | null>(null)
-    const [selectedStep, setSelectedStep] = useState<number>(0)
     const [yaml, setYaml] = useState<string>('')
     const [allPrompts, setAllPrompts] = useState<Prompt[]>([])
     const [stepTypes, setStepTypes] = useState<{type: string, label: string}[]>([])
