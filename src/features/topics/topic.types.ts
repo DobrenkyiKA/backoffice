@@ -4,6 +4,8 @@ export type Topic = {
     path: string
     coverageArea: string
     exclusions: string
+    questionCount: number
+    childCount: number
 }
 
 export type TopicNode = {

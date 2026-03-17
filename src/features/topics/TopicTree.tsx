@@ -239,9 +239,18 @@ export function TopicTree({
                 <Modal title="Delete Topic" onClose={() => { setAction(null); setDeleteError(null); }}>
                     <div className="space-y-4">
                         {deleteError && <div className="text-red-500 text-sm mb-4">{deleteError}</div>}
-                        <p className="text-sm text-gray-300">
-                            Are you sure you want to delete topic <strong>{action.topic.name}</strong>?
-                        </p>
+                        <div className="text-sm text-gray-300 space-y-2">
+                            <p>Are you sure you want to delete topic <strong>{action.topic.name}</strong>?</p>
+                            {(action.topic.childCount > 0 || action.topic.questionCount > 0) && (
+                                <p className="p-3 bg-red-900/20 border border-red-900/50 rounded text-red-400">
+                                    Warning: This topic contains
+                                    {action.topic.childCount > 0 && ` ${action.topic.childCount} subtopics`}
+                                    {action.topic.childCount > 0 && action.topic.questionCount > 0 && ' and'}
+                                    {action.topic.questionCount > 0 && ` ${action.topic.questionCount} questions`}
+                                    . By removing the topic, all subtopics and questions will be also removed.
+                                </p>
+                            )}
+                        </div>
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => { setAction(null); setDeleteError(null); }}
