@@ -774,6 +774,7 @@ export default function PipelineDetailsPage() {
                                 <option value="APPROVED">APPROVED</option>
                                 <option value="PAUSED">PAUSED</option>
                                 <option value="ABORTED">ABORTED</option>
+                                <option value="GENERATION_IN_PROGRESS">GENERATION_IN_PROGRESS</option>
                             </select>
                         </div>
                     </div>
