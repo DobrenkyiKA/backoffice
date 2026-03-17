@@ -806,23 +806,17 @@ export default function PipelineDetailsPage() {
                             </>
                         )}
 
-                        {((pipeline?.status === 'WAITING_ARTIFACT_APPROVAL' || (pipeline?.status === 'PAUSED')) && artifactStatus === 'PAUSED') && (
+                        {artifactStatus !== 'APPROVED' && pipeline?.status !== 'GENERATION_IN_PROGRESS' && (
                             <button
                                 onClick={handleRunStep}
                                 disabled={running || artifactLoading}
                                 className="px-4 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-green-700 transition-all"
                             >
-                                {running ? 'Running...' : 'CONTINUE_ARTIFACT_GENERATION'}
-                            </button>
-                        )}
-
-                        {pipeline?.steps.find(s => s.step === selectedStep)?.status === null && (
-                            <button
-                                onClick={handleRunStep}
-                                disabled={running || artifactLoading}
-                                className="px-4 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-green-700 transition-all"
-                            >
-                                {running ? 'Generating...' : 'GENERATE_ARTIFACT'}
+                                {running ? 'Running...' : (
+                                    pipeline?.steps.find(s => s.step === selectedStep)?.status === null
+                                        ? 'GENERATE_ARTIFACT'
+                                        : 'RESUME_ARTIFACT_GENERATION'
+                                )}
                             </button>
                         )}
 
