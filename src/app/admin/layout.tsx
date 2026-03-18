@@ -34,7 +34,7 @@ export default function AdminLayout({
                     <span className="font-bold">PIQ Admin</span>
                     <nav className="flex gap-4">
                         <Link href="/admin" className="text-sm hover:underline text-gray-300 hover:text-white transition-colors">Questions</Link>
-                        <Link href="/admin/pipeline" className="text-sm hover:underline text-gray-300 hover:text-white transition-colors">Pipelines</Link>
+                        <Link href="/admin/pipelines" className="text-sm hover:underline text-gray-300 hover:text-white transition-colors">Pipelines</Link>
                         <Link href="/admin/sync" className="text-sm hover:underline text-gray-300 hover:text-white transition-colors">Sync</Link>
                     </nav>
                 </div>

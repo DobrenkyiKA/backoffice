@@ -16,7 +16,7 @@ export async function createPipeline(
 ) : Promise<Pipeline> {
 
     const response =
-        await fetch(`${AI_API}/pipeline`, {
+        await fetch(`${AI_API}/pipelines`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
@@ -44,7 +44,7 @@ export async function updatePipelineMetadata(
         userPrompt?: string | null 
     }[]
 ): Promise<Pipeline> {
-    const response = await fetch(`${AI_API}/pipeline/${pipelineName}`, {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
@@ -63,7 +63,7 @@ export async function getPipelines(
     accessToken: string
 ) : Promise<Pipeline[]> {
     const response =
-        await fetch(`${AI_API}/pipeline`, {
+        await fetch(`${AI_API}/pipelines`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -80,7 +80,7 @@ export async function getStepTypes(
     accessToken: string
 ) : Promise<{type: string, label: string}[]> {
     const response =
-        await fetch(`${AI_API}/pipeline/step-types`, {
+        await fetch(`${AI_API}/pipelines/step-types`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -98,7 +98,7 @@ export async function getPipeline(
     pipelineName: string
 ) : Promise<Pipeline> {
     const response =
-        await fetch(`${AI_API}/pipeline/${pipelineName}`, {
+        await fetch(`${AI_API}/pipelines/${pipelineName}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -116,7 +116,7 @@ export async function getPipelineArtifact(
     pipelineName: string
 ) : Promise<string> {
     const response =
-        await fetch(`${AI_API}/pipeline/${pipelineName}/artifact`, {
+        await fetch(`${AI_API}/pipelines/${pipelineName}/artifact`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -135,7 +135,7 @@ export async function updatePipeline(
     yaml: string
 ) : Promise<Pipeline> {
     const response =
-        await fetch(`${AI_API}/pipeline/${pipelineName}`, {
+        await fetch(`${AI_API}/pipelines/${pipelineName}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'text/plain'
@@ -157,7 +157,7 @@ export async function getArtifactByStep(
     step: number
 ) : Promise<string> {
     const response =
-        await fetch(`${AI_API}/pipeline/${pipelineName}/artifact/${step}`, {
+        await fetch(`${AI_API}/pipelines/${pipelineName}/artifact/${step}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -178,7 +178,7 @@ export async function updateArtifactByStep(
     status: ArtifactStatus
 ) : Promise<Pipeline> {
     const response =
-        await fetch(`${AI_API}/pipeline/${pipelineName}/artifact/${step}`, {
+        await fetch(`${AI_API}/pipelines/${pipelineName}/artifact/${step}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
@@ -199,7 +199,7 @@ export async function removeArtifactByStep(
     pipelineName: string,
     step: number
 ): Promise<Pipeline> {
-    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/artifact/${step}`, {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/artifact/${step}`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
@@ -217,7 +217,7 @@ export async function deletePipeline(
     pipelineName: string
 ) : Promise<void> {
     const response =
-        await fetch(`${AI_API}/pipeline/${pipelineName}`, {
+        await fetch(`${AI_API}/pipelines/${pipelineName}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -233,7 +233,7 @@ export async function runStep(
     pipelineName: string,
     step: number
 ): Promise<Pipeline> {
-    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/run/${step}`, {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/run/${step}`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
@@ -251,7 +251,7 @@ export async function runPipelineFrom(
     pipelineName: string,
     step: number
 ): Promise<Pipeline> {
-    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/run-from/${step}`, {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/run-from/${step}`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
@@ -268,7 +268,7 @@ export async function publishTopicsArtifact(
     accessToken: string,
     pipelineName: string
 ): Promise<Pipeline> {
-    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/publish`, {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/publish`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
@@ -285,7 +285,7 @@ export async function pausePipeline(
     accessToken: string,
     pipelineName: string
 ): Promise<Pipeline> {
-    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/pause`, {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/pause`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
@@ -302,7 +302,7 @@ export async function abortPipeline(
     accessToken: string,
     pipelineName: string
 ): Promise<Pipeline> {
-    const response = await fetch(`${AI_API}/pipeline/${pipelineName}/abort`, {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/abort`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },

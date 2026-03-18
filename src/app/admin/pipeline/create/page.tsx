@@ -79,7 +79,7 @@ export default function CreatePipelinePage() {
         createPipeline(accessToken, normalized, topicKey, selectedSteps)
             .then(pipeline => {
                 setPipelineKey(pipeline.pipelineName)
-                router.push('/admin/pipeline')
+                router.push('/admin/pipelines')
             })
             .catch(err => setError(err.message))
             .finally(() => setLoading(false))

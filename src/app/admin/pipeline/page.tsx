@@ -67,7 +67,7 @@ export default function PipelineListPage() {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-xl font-bold">Content Pipelines</h1>
                 <Link
-                    href="/admin/pipeline/create"
+                    href="/admin/pipelines/create"
                     className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                 >
                     Create Pipeline
@@ -97,7 +97,7 @@ export default function PipelineListPage() {
                                 <tr
                                     key={pipeline.pipelineName}
                                     className="border-b hover:bg-gray-700 cursor-pointer"
-                                    onClick={() => router.push(`/admin/pipeline/${pipeline.pipelineName}`)}
+                                    onClick={() => router.push(`/admin/pipelines/${pipeline.pipelineName}`)}
                                 >
                                     <td className="p-3 font-medium">{pipeline.pipelineName}</td>
                                     <td className="p-3">

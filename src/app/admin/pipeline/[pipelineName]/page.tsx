@@ -493,7 +493,7 @@ export default function PipelineDetailsPage() {
         <div className="p-6 max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <Link href="/admin/pipeline" className="text-blue-600 hover:underline text-sm mb-2 inline-block font-medium">
+                    <Link href="/admin/pipelines" className="text-blue-600 hover:underline text-sm mb-2 inline-block font-medium">
                         &larr; Back to Pipelines
                     </Link>
                 </div>
