@@ -110,25 +110,6 @@ export async function getPipeline(
     return response.json()
 }
 
-export async function getPipelineArtifact(
-    accessToken: string,
-    pipelineName: string
-) : Promise<string> {
-    const response =
-        await fetch(`${AI_API}/pipelines/${pipelineName}/artifacts`, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-            method: 'GET',
-        })
-    if (!response.ok) {
-        throw new Error('Failed to fetch Pipeline artifact.')
-    }
-
-    return response.text()
-}
-
-
 export async function getArtifactByStep(
     accessToken: string,
     pipelineName: string,

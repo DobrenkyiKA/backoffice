@@ -159,7 +159,6 @@ export default function PipelineDetailsPage() {
         return () => clearInterval(interval)
     }, [accessToken, pipelineName, pipeline?.status, selectedStep])
 
-
     const handleSavePrompt = async (type: 'SYSTEM' | 'USER') => {
         if (!accessToken || !pipelineName || !pipeline) return
         
