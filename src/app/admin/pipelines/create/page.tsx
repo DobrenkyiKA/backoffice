@@ -95,7 +95,7 @@ export default function CreatePipelinePage() {
                 </div>
             )}
 
-            <div className="max-w-md space-y-4">
+            <div className="max-w-3xl space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                         Pipeline Name
@@ -175,12 +175,12 @@ export default function CreatePipelinePage() {
                     </label>
                     <div className="space-y-4">
                         {selectedSteps.map((step, index) => (
-                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-800 rounded border border-gray-700">
-                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full text-xs font-bold text-gray-400">
+                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-800 rounded border border-gray-700 w-full min-w-fit">
+                                <div className="shrink-0 w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full text-xs font-bold text-gray-400">
                                     {index}
                                 </div>
                                 <select
-                                    className="flex-grow border p-1.5 bg-gray-900 text-white rounded text-sm"
+                                    className="grow border p-1.5 bg-gray-900 text-white rounded text-sm"
                                     value={step.type}
                                     onChange={e => {
                                         const newSteps = [...selectedSteps]
