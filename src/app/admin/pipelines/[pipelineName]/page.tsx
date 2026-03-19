@@ -3,7 +3,7 @@
 import {useEffect, useMemo, useState} from 'react'
 import {useParams, usePathname, useRouter, useSearchParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, publishTopicsArtifact, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
@@ -46,7 +46,6 @@ export default function PipelineDetailsPage() {
     const [artifactLoading, setArtifactLoading] = useState(false)
     const [saving, setSaving] = useState(false)
     const [running, setRunning] = useState(false)
-    const [publishing, setPublishing] = useState(false)
     const [updatingTopic, setUpdatingTopic] = useState(false)
     const [runFromStep, setRunFromStep] = useState<number>(0)
     const [error, setError] = useState<string | null>(null)
@@ -419,24 +418,6 @@ export default function PipelineDetailsPage() {
             setError((err as Error).message)
         } finally {
             setRunning(false)
-        }
-    }
-
-    const handlePublishTopics = async () => {
-        if (!accessToken || !pipelineName) return
-        
-        setPublishing(true)
-        setError(null)
-        setSuccess(null)
-        
-        try {
-            const updated = await publishTopicsArtifact(accessToken, pipelineName as string)
-            setPipeline(updated)
-            setSuccess(`Topics artifact published successfully!`)
-        } catch (err: unknown) {
-            setError((err as Error).message)
-        } finally {
-            setPublishing(false)
         }
     }
 
@@ -828,19 +809,6 @@ export default function PipelineDetailsPage() {
                                 className="px-4 py-1.5 bg-gray-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-gray-700 transition-all"
                             >
                                 REMOVE_ARTIFACT
-                            </button>
-                        )}
-
-                        {pipeline?.steps.find(s => s.step === selectedStep)?.type === 'TOPIC_TREE_GENERATION' && (
-                            <button
-                                onClick={handlePublishTopics}
-                                disabled={publishing || artifactLoading || running || artifactStatus !== 'APPROVED'}
-                                title={artifactStatus !== 'APPROVED' ? "Only approved artifact can be published" : ""}
-                                className={`px-4 py-1.5 bg-purple-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-purple-700 transition-all ${
-                                    (publishing || artifactLoading || running || artifactStatus !== 'APPROVED') ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                            >
-                                {publishing ? 'Publishing...' : 'Publish Artifact'}
                             </button>
                         )}
                     </div>
