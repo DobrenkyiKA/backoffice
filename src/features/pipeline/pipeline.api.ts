@@ -35,7 +35,6 @@ export async function createPipeline(
 export async function updatePipelineMetadata(
     accessToken: string,
     pipelineName: string,
-    topicKey?: string,
     steps?: { 
         type: string, 
         systemPromptName?: string | null, 
@@ -50,7 +49,7 @@ export async function updatePipelineMetadata(
             'Content-Type': 'application/json'
         },
         method: 'PATCH',
-        body: JSON.stringify({ topicKey, steps }),
+        body: JSON.stringify({ steps }),
     })
     if (!response.ok) {
         const errorData = await response.json().catch(() => null)

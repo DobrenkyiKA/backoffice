@@ -5,8 +5,6 @@ import {useParams, usePathname, useRouter, useSearchParams} from 'next/navigatio
 import {useAuth} from "@/auth/useAuth";
 import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
-import {fetchTopics} from "@/features/topics/topic.api";
-import {Topic} from "@/features/topics/topic.types";
 import Link from 'next/link';
 
 
@@ -39,14 +37,10 @@ export default function PipelineDetailsPage() {
     const [userPrompt, setUserPrompt] = useState<string>('')
     const [userPromptName, setUserPromptName] = useState<string>('')
     const [artifactStatus, setArtifactStatus] = useState<ArtifactStatus>('PENDING_FOR_APPROVAL')
-    const [topics, setTopics] = useState<Topic[]>([])
-    const [topicSearch, setTopicSearch] = useState('')
-    const [showSuggestions, setShowSuggestions] = useState(false)
     const [loading, setLoading] = useState(true)
     const [artifactLoading, setArtifactLoading] = useState(false)
     const [saving, setSaving] = useState(false)
     const [running, setRunning] = useState(false)
-    const [updatingTopic, setUpdatingTopic] = useState(false)
     const [runFromStep, setRunFromStep] = useState<number>(0)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
@@ -97,14 +91,12 @@ export default function PipelineDetailsPage() {
         let ignore = false
         Promise.all([
             getPipeline(accessToken, pipelineName as string),
-            fetchTopics(accessToken),
             getPrompts(accessToken),
             getStepTypes(accessToken)
         ])
-        .then(([p, t, pr, st]) => {
+        .then(([p, pr, st]) => {
             if (ignore) return
             setPipeline(p)
-            setTopics(t)
             setAllPrompts(pr)
             setStepTypes(st)
         })
@@ -167,36 +159,6 @@ export default function PipelineDetailsPage() {
         return () => clearInterval(interval)
     }, [accessToken, pipelineName, pipeline?.status, selectedStep])
 
-    const filteredTopics = useMemo(() => {
-        const term = topicSearch.toLowerCase();
-        return topics.filter(t => 
-            t.name.toLowerCase().includes(term) ||
-            t.key.toLowerCase().includes(term)
-        );
-    }, [topics, topicSearch]);
-
-    const currentTopicName = useMemo(() => {
-        const t = topics.find(t => t.key === pipeline?.topicKey);
-        return t ? `${t.name} (${t.key})` : '';
-    }, [topics, pipeline?.topicKey]);
-
-    const handleTopicChange = async (newTopicKey: string) => {
-        if (!accessToken || !pipelineName || !pipeline) return
-        
-        setUpdatingTopic(true)
-        setError(null)
-        setSuccess(null)
-        
-        try {
-            const updated = await updatePipelineMetadata(accessToken, pipelineName as string, newTopicKey)
-            setPipeline(updated)
-            setSuccess(`Topic updated to ${newTopicKey} successfully!`)
-        } catch (err: unknown) {
-            setError((err as Error).message)
-        } finally {
-            setUpdatingTopic(false)
-        }
-    }
 
     const handleSavePrompt = async (type: 'SYSTEM' | 'USER') => {
         if (!accessToken || !pipelineName || !pipeline) return
@@ -217,7 +179,7 @@ export default function PipelineDetailsPage() {
                 }
             })
 
-            const updated = await updatePipelineMetadata(accessToken, pipelineName as string, undefined, updatedSteps)
+            const updated = await updatePipelineMetadata(accessToken, pipelineName as string, updatedSteps)
             setPipeline(updated)
             setSuccess(`${type === 'SYSTEM' ? 'System' : 'User'} prompt for step ${selectedStep} updated successfully!`)
         } catch (err: unknown) {
@@ -535,57 +497,7 @@ export default function PipelineDetailsPage() {
                 </div>
             </div>
             <div className="flex flex-col mb-8">
-                <div className="text-2xl font-extrabold text-white mb-2">Start topic:</div>
-                <div className="flex items-center gap-2">
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder={currentTopicName || "Type to search topic..."}
-                            className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none w-64"
-                            value={topicSearch}
-                            onChange={e => {
-                                setTopicSearch(e.target.value)
-                                setShowSuggestions(true)
-                            }}
-                            onFocus={() => { if (topicSearch) setShowSuggestions(true); }}
-                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                            disabled={updatingTopic || loading}
-                        />
-                        {topicSearch && (
-                            <button
-                                onClick={() => {
-                                    setTopicSearch('')
-                                    setShowSuggestions(true)
-                                }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                                ✕
-                            </button>
-                        )}
-                        {showSuggestions && topicSearch.length > 0 && (
-                            <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-auto shadow-lg">
-                                {filteredTopics.length > 0 ? (
-                                    filteredTopics.map(t => (
-                                        <li
-                                            key={t.key}
-                                            className="p-2 hover:bg-blue-50 cursor-pointer text-xs text-gray-900 border-b border-gray-100 last:border-0"
-                                            onMouseDown={() => {
-                                                handleTopicChange(t.key)
-                                                setTopicSearch(`${t.name} (${t.key})`)
-                                                setShowSuggestions(false)
-                                            }}
-                                        >
-                                            <div className="font-bold">{t.name}</div>
-                                            <div className="text-[10px] text-gray-500">{t.key}</div>
-                                        </li>
-                                    ))
-                                ) : (
-                                    <li className="p-2 text-xs text-gray-500">No topics found</li>
-                                )}
-                            </ul>
-                        )}
-                    </div>
-                </div>
+                <div className="text-2xl font-extrabold text-white mb-2">Start topic: {pipeline?.topicKey}</div>
             </div>
             {/* Pipeline Visual Representation */}
             <div className="mb-10 relative">
