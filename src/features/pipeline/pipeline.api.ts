@@ -8,10 +8,8 @@ export async function createPipeline(
     topicKey: string,
     steps: { 
         type: string, 
-        systemPromptName?: string | null, 
-        systemPrompt?: string | null, 
-        userPromptName?: string | null, 
-        userPrompt?: string | null 
+        systemPromptName: string, 
+        userPromptName: string 
     }[] = []
 ) : Promise<Pipeline> {
 
@@ -38,9 +36,7 @@ export async function updatePipeline(
     steps?: { 
         type: string, 
         systemPromptName?: string | null, 
-        systemPrompt?: string | null, 
-        userPromptName?: string | null, 
-        userPrompt?: string | null 
+        userPromptName?: string | null 
     }[]
 ): Promise<Pipeline> {
     const response = await fetch(`${AI_API}/pipelines`, {
@@ -300,10 +296,9 @@ export async function createPrompt(
 
 export async function updatePrompt(
     accessToken: string,
-    name: string,
-    prompt: { name?: string, content?: string }
+    prompt: { name: string, content: string }
 ): Promise<Prompt> {
-    const response = await fetch(`${AI_API}/prompts/${name}`, {
+    const response = await fetch(`${AI_API}/prompts`, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json'

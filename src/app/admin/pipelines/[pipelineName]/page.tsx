@@ -159,49 +159,35 @@ export default function PipelineDetailsPage() {
         return () => clearInterval(interval)
     }, [accessToken, pipelineName, pipeline?.status, selectedStep])
 
-    const handleSavePrompt = async (type: 'SYSTEM' | 'USER') => {
-        if (!accessToken || !pipelineName || !pipeline) return
-        
-        setSaving(true)
-        setError(null)
-        setSuccess(null)
-        
-        try {
-            const updatedSteps = pipeline.steps.map(s => {
-                const isSelected = s.step === selectedStep
-                return {
-                    type: s.type,
-                    systemPromptName: (isSelected && type === 'SYSTEM') ? systemPromptName : s.systemPromptName,
-                    systemPrompt: (isSelected && type === 'SYSTEM') ? systemPrompt : s.systemPrompt,
-                    userPromptName: (isSelected && type === 'USER') ? userPromptName : s.userPromptName,
-                    userPrompt: (isSelected && type === 'USER') ? userPrompt : s.userPrompt
-                }
-            })
-
-            const updated = await updatePipeline(accessToken, pipelineName as string, updatedSteps)
-            setPipeline(updated)
-            setSuccess(`${type === 'SYSTEM' ? 'System' : 'User'} prompt for step ${selectedStep} updated successfully!`)
-        } catch (err: unknown) {
-            setError((err as Error).message)
-        } finally {
-            setSaving(false)
-        }
-    }
 
     const handleCreatePrompt = async (type: 'SYSTEM' | 'USER') => {
-        if (!accessToken) return
+        if (!accessToken || !pipelineName || !pipeline) return
         const name = prompt(`Enter new ${type} prompt name:`)
         if (!name) return
 
         const content = type === 'SYSTEM' ? systemPrompt : userPrompt
         
         setSaving(true)
+        setError(null)
+        setSuccess(null)
         try {
             const newPrompt = await createPrompt(accessToken, { name, type, content })
             setAllPrompts([...allPrompts, newPrompt])
             if (type === 'SYSTEM') setSystemPromptName(name)
             else setUserPromptName(name)
-            setSuccess(`Prompt '${name}' created successfully!`)
+
+            const updatedSteps = pipeline.steps.map(s => {
+                const isSelected = s.step === selectedStep
+                return {
+                    type: s.type,
+                    systemPromptName: (isSelected && type === 'SYSTEM') ? name : s.systemPromptName,
+                    userPromptName: (isSelected && type === 'USER') ? name : s.userPromptName
+                }
+            })
+
+            const updated = await updatePipeline(accessToken, pipelineName as string, updatedSteps)
+            setPipeline(updated)
+            setSuccess(`Prompt '${name}' created and attached successfully!`)
         } catch (err: unknown) {
             setError((err as Error).message)
         } finally {
@@ -219,14 +205,29 @@ export default function PipelineDetailsPage() {
         const content = type === 'SYSTEM' ? systemPrompt : userPrompt
         
         setSaving(true)
+        setError(null)
+        setSuccess(null)
         try {
-            const updated = await updatePrompt(accessToken, name, { content })
+            const updated = await updatePrompt(accessToken, {name, content })
             setAllPrompts(allPrompts.map(p => p.name === name ? updated : p))
             setSuccess(`Prompt '${name}' updated successfully!`)
         } catch (err: unknown) {
             setError((err as Error).message)
         } finally {
             setSaving(false)
+        }
+    }
+
+    const handleRefreshPrompt = (type: 'SYSTEM' | 'USER') => {
+        const name = type === 'SYSTEM' ? systemPromptName : userPromptName
+        if (!name) return
+        
+        const found = allPrompts.find(p => p.name === name)
+        if (found) {
+            if (type === 'SYSTEM') setSystemPrompt(found.content)
+            else setUserPrompt(found.content)
+            setSuccess(`Prompt '${name}' refreshed.`)
+            setError(null)
         }
     }
 
@@ -560,18 +561,33 @@ export default function PipelineDetailsPage() {
                                     <option key={p.name} value={p.name}>{p.name}</option>
                                 ))}
                             </select>
-                            <button onClick={() => handleUpdateExistingPrompt('SYSTEM')} disabled={!systemPromptName} className="p-1 hover:bg-gray-200 rounded" title="Update Shared Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
-                            <button onClick={() => handleCreatePrompt('SYSTEM')} className="p-1 hover:bg-gray-200 rounded" title="Save as New Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg></button>
-                            <button onClick={() => handleDeletePromptByName(systemPromptName)} disabled={!systemPromptName} className="p-1 hover:bg-gray-200 rounded text-red-500" title="Delete Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                             <button
-                                onClick={() => handleSavePrompt('SYSTEM')}
-                                disabled={saving || loading}
-                                title="Update Pipeline Step with current system prompt"
-                                className={`ml-2 px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${
-                                    (saving || loading) ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
+                                onClick={() => handleUpdateExistingPrompt('SYSTEM')}
+                                disabled={saving || loading || !systemPromptName}
+                                className={`px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${(saving || loading || !systemPromptName) ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                {saving ? 'Saving...' : 'Save'}
+                                Save
+                            </button>
+                            <button
+                                onClick={() => handleDeletePromptByName(systemPromptName)}
+                                disabled={saving || loading || !systemPromptName}
+                                className={`px-4 py-1.5 bg-red-600 text-white rounded-md font-bold text-xs shadow hover:bg-red-700 transition-all ${(saving || loading || !systemPromptName) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                Delete
+                            </button>
+                            <button
+                                onClick={() => handleRefreshPrompt('SYSTEM')}
+                                disabled={saving || loading || !systemPromptName}
+                                className={`px-4 py-1.5 bg-gray-600 text-white rounded-md font-bold text-xs shadow hover:bg-gray-700 transition-all ${(saving || loading || !systemPromptName) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                Refresh
+                            </button>
+                            <button
+                                onClick={() => handleCreatePrompt('SYSTEM')}
+                                disabled={saving || loading}
+                                className={`px-4 py-1.5 bg-green-600 text-white rounded-md font-bold text-xs shadow hover:bg-green-700 transition-all ${(saving || loading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                + New
                             </button>
                         </div>
                     </div>
@@ -596,18 +612,33 @@ export default function PipelineDetailsPage() {
                                     <option key={p.name} value={p.name}>{p.name}</option>
                                 ))}
                             </select>
-                            <button onClick={() => handleUpdateExistingPrompt('USER')} disabled={!userPromptName} className="p-1 hover:bg-gray-200 rounded" title="Update Shared Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
-                            <button onClick={() => handleCreatePrompt('USER')} className="p-1 hover:bg-gray-200 rounded" title="Save as New Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg></button>
-                            <button onClick={() => handleDeletePromptByName(userPromptName)} disabled={!userPromptName} className="p-1 hover:bg-gray-200 rounded text-red-500" title="Delete Prompt"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                             <button
-                                onClick={() => handleSavePrompt('USER')}
-                                disabled={saving || loading}
-                                title="Update Pipeline Step with current user prompt"
-                                className={`ml-2 px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${
-                                    (saving || loading) ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
+                                onClick={() => handleUpdateExistingPrompt('USER')}
+                                disabled={saving || loading || !userPromptName}
+                                className={`px-4 py-1.5 bg-blue-600 text-white rounded-md font-bold text-xs shadow hover:bg-blue-700 transition-all ${(saving || loading || !userPromptName) ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                {saving ? 'Saving...' : 'Save'}
+                                Save
+                            </button>
+                            <button
+                                onClick={() => handleDeletePromptByName(userPromptName)}
+                                disabled={saving || loading || !userPromptName}
+                                className={`px-4 py-1.5 bg-red-600 text-white rounded-md font-bold text-xs shadow hover:bg-red-700 transition-all ${(saving || loading || !userPromptName) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                Delete
+                            </button>
+                            <button
+                                onClick={() => handleRefreshPrompt('USER')}
+                                disabled={saving || loading || !userPromptName}
+                                className={`px-4 py-1.5 bg-gray-600 text-white rounded-md font-bold text-xs shadow hover:bg-gray-700 transition-all ${(saving || loading || !userPromptName) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                Refresh
+                            </button>
+                            <button
+                                onClick={() => handleCreatePrompt('USER')}
+                                disabled={saving || loading}
+                                className={`px-4 py-1.5 bg-green-600 text-white rounded-md font-bold text-xs shadow hover:bg-green-700 transition-all ${(saving || loading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                + New
                             </button>
                         </div>
                     </div>
