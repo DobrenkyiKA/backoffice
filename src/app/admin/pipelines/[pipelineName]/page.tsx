@@ -3,7 +3,7 @@
 import {useEffect, useMemo, useState} from 'react'
 import {useParams, usePathname, useRouter, useSearchParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipelineMetadata, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipeline, getPrompts, createPrompt, updatePrompt, deletePrompt, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
 import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
 import Link from 'next/link';
 
@@ -179,7 +179,7 @@ export default function PipelineDetailsPage() {
                 }
             })
 
-            const updated = await updatePipelineMetadata(accessToken, pipelineName as string, updatedSteps)
+            const updated = await updatePipeline(accessToken, pipelineName as string, updatedSteps)
             setPipeline(updated)
             setSuccess(`${type === 'SYSTEM' ? 'System' : 'User'} prompt for step ${selectedStep} updated successfully!`)
         } catch (err: unknown) {
