@@ -24,15 +24,13 @@ export default function CreatePipelinePage() {
     const [pipelineKey, setPipelineKey] = useState<string | null>(null)
     const [selectedSteps, setSelectedSteps] = useState<{
         type: string, 
-        systemPromptName?: string, 
-        systemPrompt: string, 
-        userPromptName?: string, 
-        userPrompt: string
+        systemPromptName: string, 
+        userPromptName: string
     }[]>([
-        { type: 'TOPIC_TREE_GENERATION', systemPrompt: '', userPrompt: '' },
-        { type: 'QUESTIONS_GENERATION', systemPrompt: '', userPrompt: '' },
-        { type: 'LONG_ANSWERS_GENERATION', systemPrompt: '', userPrompt: '' },
-        { type: 'SHORT_ANSWERS_GENERATION', systemPrompt: '', userPrompt: '' }
+        { type: 'TOPIC_TREE_GENERATION', systemPromptName: '', userPromptName: '' },
+        { type: 'QUESTIONS_GENERATION', systemPromptName: '', userPromptName: '' },
+        { type: 'LONG_ANSWERS_GENERATION', systemPromptName: '', userPromptName: '' },
+        { type: 'SHORT_ANSWERS_GENERATION', systemPromptName: '', userPromptName: '' }
     ])
 
     useEffect(() => {
@@ -202,8 +200,6 @@ export default function CreatePipelinePage() {
                                             const name = e.target.value
                                             const newSteps = [...selectedSteps]
                                             newSteps[index].systemPromptName = name
-                                            const found = prompts.find(p => p.name === name)
-                                            if (found) newSteps[index].systemPrompt = found.content
                                             setSelectedSteps(newSteps)
                                         }}
                                     >
@@ -219,8 +215,6 @@ export default function CreatePipelinePage() {
                                             const name = e.target.value
                                             const newSteps = [...selectedSteps]
                                             newSteps[index].userPromptName = name
-                                            const found = prompts.find(p => p.name === name)
-                                            if (found) newSteps[index].userPrompt = found.content
                                             setSelectedSteps(newSteps)
                                         }}
                                     >
@@ -274,7 +268,7 @@ export default function CreatePipelinePage() {
                         ))}
                     </div>
                     <button
-                        onClick={() => setSelectedSteps([...selectedSteps, { type: stepTypes[0]?.type || 'TOPIC_TREE_GENERATION', systemPrompt: '', userPrompt: '' }])}
+                        onClick={() => setSelectedSteps([...selectedSteps, { type: stepTypes[0]?.type || 'TOPIC_TREE_GENERATION', systemPromptName: '', userPromptName: '' }])}
                         disabled={loading}
                         className="mt-4 text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
                     >
