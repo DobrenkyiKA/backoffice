@@ -2,7 +2,8 @@
 
 import {useEffect, useMemo, useState} from 'react'
 import {useAuth} from "@/auth/useAuth";
-import {createPipeline, getPrompts, getStepTypes} from "@/features/pipeline/pipeline.api";
+import {createPipeline, getStepTypes} from "@/features/pipeline/pipeline.api";
+import {getPrompts} from "@/features/pipeline/prompt.api";
 import {fetchTopics} from "@/features/topics/topic.api";
 import {Topic} from "@/features/topics/topic.types";
 import {Prompt} from "@/features/pipeline/pipeline.types";
