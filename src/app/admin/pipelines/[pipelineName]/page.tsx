@@ -145,8 +145,8 @@ export default function PipelineDetailsPage() {
                 const updated = await getPipeline(accessToken, pipelineName as string)
                 setPipeline(updated)
                 
-                // Also update YAML if we're on the current step being generated
-                // For simplicity, always fetch if it's the selected step and it has at least some status
+                // Also, update YAML if we're on the current step being generated
+                // For simplicity, always fetch if it's the selected step, and it has at least some status
                 const stepInfo = updated.steps.find(s => s.step === selectedStep)
                 if (stepInfo && (stepInfo.status || updated.status === 'GENERATION_IN_PROGRESS')) {
                      const newYaml = await getArtifactByStep(accessToken, pipelineName as string, selectedStep)
@@ -345,7 +345,7 @@ export default function PipelineDetailsPage() {
             const updated = await runPipelineFrom(accessToken, pipelineName as string, runFromStep)
             setPipeline(updated)
             setSuccess(`Pipeline run from step ${runFromStep} completed successfully!`)
-            // Refresh current artifact if needed
+            // Refresh the current artifact if needed
             if (selectedStep >= runFromStep) {
                 const stepInfo = updated.steps.find(s => s.step === selectedStep)
                 if (stepInfo?.status) {
