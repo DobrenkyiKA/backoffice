@@ -555,7 +555,7 @@ export default function PipelineDetailsPage() {
                              <select
                                 value={systemPromptName}
                                 onChange={(e) => handleSelectPrompt(e.target.value, 'SYSTEM')}
-                                className="text-[10px] border border-gray-300 rounded px-2 py-1 bg-white"
+                                className="text-[10px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-950"
                             >
                                 <option value="">Custom / None</option>
                                 {allPrompts.filter(p => p.type === 'SYSTEM').map(p => (
@@ -606,7 +606,7 @@ export default function PipelineDetailsPage() {
                              <select
                                 value={userPromptName}
                                 onChange={(e) => handleSelectPrompt(e.target.value, 'USER')}
-                                className="text-[10px] border border-gray-300 rounded px-2 py-1 bg-white"
+                                className="text-[10px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-950"
                             >
                                 <option value="">Custom / None</option>
                                 {allPrompts.filter(p => p.type === 'USER').map(p => (
