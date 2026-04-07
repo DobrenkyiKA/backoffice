@@ -1,4 +1,4 @@
-import {ArtifactStatus, Pipeline} from "@/features/pipeline/pipeline.types";
+import {ArtifactStatus, GenerationLog, Pipeline} from "@/features/pipeline/pipeline.types";
 
 const AI_API = process.env.NEXT_PUBLIC_AI_API_URL
 
@@ -249,6 +249,22 @@ export async function abortPipeline(
     if (!response.ok) {
         const errorData = await response.json().catch(() => null)
         throw new Error(errorData?.message || `Failed to abort pipeline.`)
+    }
+    return response.json()
+}
+
+export async function getPipelineLogs(
+    accessToken: string,
+    pipelineName: string
+): Promise<GenerationLog[]> {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/logs`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'GET',
+    })
+    if (!response.ok) {
+        throw new Error(`Failed to fetch Pipeline logs.`)
     }
     return response.json()
 }

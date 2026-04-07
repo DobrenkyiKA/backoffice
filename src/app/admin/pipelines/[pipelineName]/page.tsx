@@ -3,9 +3,9 @@
 import {useEffect, useMemo, useState} from 'react'
 import {useParams, usePathname, useRouter, useSearchParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipeline, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipeline, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep, getPipelineLogs} from "@/features/pipeline/pipeline.api";
 import {getPrompts, createPrompt, updatePrompt, deletePrompt} from "@/features/pipeline/prompt.api";
-import {ArtifactStatus, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
+import {ArtifactStatus, GenerationLog, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
 import Link from 'next/link';
 
 
@@ -30,6 +30,7 @@ export default function PipelineDetailsPage() {
     const {accessToken} = useAuth()
     
     const [pipeline, setPipeline] = useState<Pipeline | null>(null)
+    const [logs, setLogs] = useState<GenerationLog[]>([])
     const [yaml, setYaml] = useState<string>('')
     const [allPrompts, setAllPrompts] = useState<Prompt[]>([])
     const [stepTypes, setStepTypes] = useState<{type: string, label: string}[]>([])
@@ -45,6 +46,14 @@ export default function PipelineDetailsPage() {
     const [runFromStep, setRunFromStep] = useState<number>(0)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
+    const [pollingInterval, setPollingInterval] = useState<number>(5000)
+
+    const intervalOptions = [
+        { label: '5 sec.', value: 5000 },
+        { label: '30 sec.', value: 30000 },
+        { label: '5 min.', value: 300000 },
+        { label: '30 min.', value: 1800000 },
+    ]
 
     const [prevAccessToken, setPrevAccessToken] = useState<string | null>(accessToken)
     const [prevPipelineName, setPrevPipelineName] = useState<string | string[] | undefined>(pipelineName)
@@ -92,12 +101,14 @@ export default function PipelineDetailsPage() {
         let ignore = false
         Promise.all([
             getPipeline(accessToken, pipelineName as string),
+            getPipelineLogs(accessToken, pipelineName as string),
             getPrompts(accessToken),
             getStepTypes(accessToken)
         ])
-        .then(([p, pr, st]) => {
+        .then(([p, l, pr, st]) => {
             if (ignore) return
             setPipeline(p)
+            setLogs(l)
             setAllPrompts(pr)
             setStepTypes(st)
         })
@@ -138,12 +149,16 @@ export default function PipelineDetailsPage() {
     }, [accessToken, pipelineName, selectedStep, pipeline?.steps])
 
     useEffect(() => {
-        if (!accessToken || !pipelineName || pipeline?.status !== 'GENERATION_IN_PROGRESS') return
+        if (!accessToken || !pipelineName) return
 
         const interval = setInterval(async () => {
             try {
-                const updated = await getPipeline(accessToken, pipelineName as string)
+                const [updated, updatedLogs] = await Promise.all([
+                    getPipeline(accessToken, pipelineName as string),
+                    getPipelineLogs(accessToken, pipelineName as string)
+                ])
                 setPipeline(updated)
+                setLogs(updatedLogs)
                 
                 // Also, update YAML if we're on the current step being generated
                 // For simplicity, always fetch if it's the selected step, and it has at least some status
@@ -155,10 +170,10 @@ export default function PipelineDetailsPage() {
             } catch (err) {
                 console.error("Polling error:", err)
             }
-        }, 3000)
+        }, pollingInterval)
 
         return () => clearInterval(interval)
-    }, [accessToken, pipelineName, pipeline?.status, selectedStep])
+    }, [accessToken, pipelineName, selectedStep, pollingInterval])
 
 
     const handleCreatePrompt = async (type: 'SYSTEM' | 'USER') => {
@@ -655,11 +670,25 @@ export default function PipelineDetailsPage() {
             {/* Logs Section */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden mb-8 flex flex-col">
                 <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
-                    <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">Generation Logs</span>
+                    <span className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                        {stepsToDisplay.find(s => s.id === selectedStep)?.label || 'Generation'} Logs
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Poll every:</span>
+                        <select
+                            value={pollingInterval}
+                            onChange={(e) => setPollingInterval(parseInt(e.target.value))}
+                            className="text-[10px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-950"
+                        >
+                            {intervalOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div className="h-64 overflow-y-auto p-4 font-mono text-[10px] bg-gray-50 text-gray-800">
-                    {pipeline?.logs?.filter(log => log.stepOrder === selectedStep).length ? (
-                        pipeline.logs.filter(log => log.stepOrder === selectedStep).map((log, i) => (
+                    {logs?.filter(log => log.stepOrder === selectedStep || log.stepOrder === null).length ? (
+                        logs.filter(log => log.stepOrder === selectedStep || log.stepOrder === null).map((log, i) => (
                             <div key={i} className="mb-1 border-b border-gray-100 pb-1">
                                 <span className="text-gray-400 mr-2">[{new Date(log.createdAt).toLocaleTimeString()}]</span>
                                 {log.message}

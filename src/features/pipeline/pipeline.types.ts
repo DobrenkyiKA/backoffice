@@ -32,5 +32,4 @@ export type Pipeline = {
     createdAt: string
     updatedAt: string
     steps: PipelineStep[]
-    logs: GenerationLog[]
 }
