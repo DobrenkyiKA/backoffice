@@ -255,9 +255,12 @@ export async function abortPipeline(
 
 export async function getPipelineLogs(
     accessToken: string,
-    pipelineName: string
+    pipelineName: string,
+    step: number
 ): Promise<GenerationLog[]> {
-    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/logs`, {
+    const url = new URL(`${AI_API}/pipelines/${pipelineName}/logs`)
+    url.searchParams.append('step', step.toString())
+    const response = await fetch(url.toString(), {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },

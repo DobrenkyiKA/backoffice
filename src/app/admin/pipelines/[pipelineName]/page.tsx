@@ -101,7 +101,7 @@ export default function PipelineDetailsPage() {
         let ignore = false
         Promise.all([
             getPipeline(accessToken, pipelineName as string),
-            getPipelineLogs(accessToken, pipelineName as string),
+            getPipelineLogs(accessToken, pipelineName as string, selectedStep),
             getPrompts(accessToken),
             getStepTypes(accessToken)
         ])
@@ -120,7 +120,7 @@ export default function PipelineDetailsPage() {
         })
 
         return () => { ignore = true }
-    }, [accessToken, pipelineName])
+    }, [accessToken, pipelineName, selectedStep])
 
     useEffect(() => {
         if (!accessToken || !pipelineName || selectedStep === null) return
@@ -155,7 +155,7 @@ export default function PipelineDetailsPage() {
             try {
                 const [updated, updatedLogs] = await Promise.all([
                     getPipeline(accessToken, pipelineName as string),
-                    getPipelineLogs(accessToken, pipelineName as string)
+                    getPipelineLogs(accessToken, pipelineName as string, selectedStep)
                 ])
                 setPipeline(updated)
                 setLogs(updatedLogs)
@@ -687,8 +687,8 @@ export default function PipelineDetailsPage() {
                     </div>
                 </div>
                 <div className="h-64 overflow-y-auto p-4 font-mono text-[10px] bg-gray-50 text-gray-800">
-                    {logs?.filter(log => log.stepOrder === selectedStep || log.stepOrder === null).length ? (
-                        logs.filter(log => log.stepOrder === selectedStep || log.stepOrder === null).map((log, i) => (
+                    {logs?.length ? (
+                        logs.map((log, i) => (
                             <div key={i} className="mb-1 border-b border-gray-100 pb-1">
                                 <span className="text-gray-400 mr-2">[{new Date(log.createdAt).toLocaleTimeString()}]</span>
                                 {log.message}
