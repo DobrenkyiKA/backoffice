@@ -3,7 +3,7 @@
 import {useEffect, useMemo, useState} from 'react'
 import {useParams, usePathname, useRouter, useSearchParams} from 'next/navigation'
 import {useAuth} from "@/auth/useAuth";
-import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipeline, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep, getPipelineLogs} from "@/features/pipeline/pipeline.api";
+import {getArtifactByStep, getPipeline, updateArtifactByStep, runStep, runPipelineFrom, updatePipeline, getStepTypes, pausePipeline, abortPipeline, removeArtifactByStep, getPipelineLogs, loadArtifactByStep} from "@/features/pipeline/pipeline.api";
 import {getPrompts, createPrompt, updatePrompt, deletePrompt} from "@/features/pipeline/prompt.api";
 import {ArtifactStatus, GenerationLog, Pipeline, Prompt} from "@/features/pipeline/pipeline.types";
 import Link from 'next/link';
@@ -278,6 +278,30 @@ export default function PipelineDetailsPage() {
             setPipeline(updated)
             setYaml('')
             setSuccess(`Artifact for step ${selectedStep} removed successfully!`)
+        } catch (err: unknown) {
+            setError((err as Error).message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleLoadArtifact = async () => {
+        if (!accessToken || !pipelineName || selectedStep === null) return
+        
+        setSaving(true)
+        setError(null)
+        setSuccess(null)
+        
+        try {
+            const updated = await loadArtifactByStep(accessToken, pipelineName as string, selectedStep)
+            setPipeline(updated)
+            
+            const newYaml = await getArtifactByStep(accessToken, pipelineName as string, selectedStep)
+            setYaml(newYaml)
+            const stepInfo = updated.steps.find(s => s.step === selectedStep)
+            if (stepInfo?.status) setArtifactStatus(stepInfo.status)
+
+            setSuccess(`Artifact for step ${selectedStep} loaded successfully from storage!`)
         } catch (err: unknown) {
             setError((err as Error).message)
         } finally {
@@ -741,6 +765,16 @@ export default function PipelineDetailsPage() {
                             }`}
                         >
                             {saving ? 'Saving...' : 'SAVE_ARTIFACT'}
+                        </button>
+
+                        <button
+                            onClick={handleLoadArtifact}
+                            disabled={saving || artifactLoading || running}
+                            className={`px-4 py-1.5 bg-cyan-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-cyan-700 transition-all ${
+                                (saving || artifactLoading || running) ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                        >
+                            {saving ? 'Loading...' : 'LOAD_ARTIFACT'}
                         </button>
 
                         {pipeline?.status === 'GENERATION_IN_PROGRESS' && (

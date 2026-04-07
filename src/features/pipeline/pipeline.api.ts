@@ -167,6 +167,24 @@ export async function removeArtifactByStep(
     return response.json()
 }
 
+export async function loadArtifactByStep(
+    accessToken: string,
+    pipelineName: string,
+    step: number
+): Promise<Pipeline> {
+    const response = await fetch(`${AI_API}/pipelines/${pipelineName}/artifacts/${step}/load`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        method: 'POST',
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || `Failed to load artifact for step ${step}.`)
+    }
+    return response.json()
+}
+
 export async function deletePipeline(
     accessToken: string,
     pipelineName: string
